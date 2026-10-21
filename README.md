@@ -2,6 +2,22 @@
 
 ## Contrôle de qualité et évaluation
 
+### Tests dans Docker Desktop
+
+Après la première construction (`docker compose up -d --build`), ouvrir
+Docker Desktop → Containers → groupe du projet → `tests` → Logs.
+Le résumé affiche les tests réussis ou échoués. Le conteneur s'arrête après
+les tests : `Exited (0)` signifie qu'ils ont tous réussi. Un autre code
+indique un échec. Cliquer sur Start pour relancer les tests ; les nouvelles
+lignes s'ajoutent aux logs, consulter le dernier résumé.
+
+Les dossiers de code et de tests locaux sont montés en lecture seule :
+un nouveau lancement utilise leurs modifications sans reconstruire l'image.
+Si les dépendances changent, reconstruire l'image reste nécessaire.
+Les tests utilisent des fournisseurs simulés, sans clé ni accès réseau.
+Ils ne certifient pas la qualité linguistique des traductions réelles.
+Le service `traduction` conserve uniquement l'application et ses dépendances.
+
 Les résultats sont présentés comme des brouillons à relire. Après traduction,
 des contrôles locaux signalent les écarts de nombres et de références dans
 le texte extractible, avec un rapport JSON téléchargeable, sans appel IA

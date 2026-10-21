@@ -1,10 +1,19 @@
-# Allow only application inputs. Keys, history, virtualenv and temporary files
+# Allow only application and test inputs. Keys, history, virtualenv and temporary files
 # are excluded from the build context, not merely from the final image.
 *
 !Dockerfile
 !requirements.txt
+!requirements-dev.txt
 !app.py
 !services/
 !services/*.py
 !.streamlit/
 !.streamlit/config.toml
+!pytest.ini
+!tests/
+!tests/*.py
+!examples/
+!examples/*.pdf
+!evaluation/
+!evaluation/*.py
+!evaluation/corpus.json

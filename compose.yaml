@@ -1,9 +1,27 @@
 services:
   traduction:
-    build: .
+    build:
+      context: .
+      target: application
     image: platforme-traduction:local
     ports:
       - "127.0.0.1:8502:8501"
     env_file:
       - .env
     restart: unless-stopped
+  tests:
+    build:
+      context: .
+      target: tests
+    image: platforme-traduction-tests:local
+    restart: "no"
+    network_mode: none
+    environment:
+      OPENAI_API_KEY: ""
+      DEEPL_API_KEY: ""
+    volumes:
+      - ./app.py:/app/app.py:ro
+      - ./services:/app/services:ro
+      - ./tests:/app/tests:ro
+      - ./examples:/app/examples:ro
+      - ./evaluation:/app/evaluation:ro
