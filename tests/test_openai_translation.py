@@ -61,7 +61,7 @@ def test_docx_body_and_tables_in_order():
     ('EN-GB', 'Technical monitoring sheet'),
     ('ES', 'Informe de incidente y coordinación'),
     ('DE', 'Störungsbericht und technische Überprüfung'),
-    ('ZH-HANS', '技术跟踪表。模拟事件报告。车门故障。'),
+    ('FR', 'Fiche de suivi technique et contrôle des équipements.'),
 ])
 def test_pdf_unicode_and_printable_pages(language, text):
     data = render_document([text, 'RN 204 | 12/10/2026 | 08:10'], '.pdf', language)

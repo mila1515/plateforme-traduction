@@ -49,7 +49,7 @@ def test_interface_without_key(monkeypatch):
     assert len(app.tabs) == 0
     assert app.button[0].label == 'Traduire le lot'
     assert app.button[0].disabled
-    app.selectbox[0].select('Chinois simplifié').run()
+    app.selectbox[0].select('Allemand').run()
     assert not app.exception
 
 

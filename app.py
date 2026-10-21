@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
 st.set_page_config(page_title='Traduction de documents', page_icon='📄', layout='centered')
 st.title('Documents & traduction')
-st.caption('Traduisez vos documents entre français, anglais, espagnol, allemand et chinois.')
+st.caption('Traduisez vos documents entre français, anglais, espagnol et allemand.')
 uploads = st.file_uploader('Importer des PDF ou Word', type=['pdf', 'docx'], accept_multiple_files=True, help='Maximum 5 documents de 5 Mo, dans la même langue source. Les PDF doivent contenir du texte.')
 selected = st.selectbox('Langue souhaitée', list(LANGUAGES))
 language = LANGUAGES[selected]

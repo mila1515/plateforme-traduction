@@ -3,14 +3,14 @@
 ## Guide rapide et documentation
 
 Le prototype traduit des PDF et Word entre français, anglais britannique,
-espagnol, allemand et chinois simplifié. Il propose un glossaire local
+espagnol et allemand. Il propose un glossaire local
 optionnel et des rapports de contrôle. Tous les résultats sont des
 **brouillons à relire**. Il n'y a pas de base de données.
 
 | Pour comprendre ou modifier… | Lire ou ouvrir… |
 | --- | --- |
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
-| Les 12 notions proposées dans les cinq langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
+| Les 12 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
@@ -77,14 +77,14 @@ avec ce protocole.
 
 ## Objectif
 
-Une petite application web permettant d'importer plusieurs documents, de choisir leur langue et une langue de destination, puis de récupérer les documents traduits pour les imprimer. Français, anglais, espagnol, allemand et chinois simplifié sont disponibles dans les deux sens.
+Une petite application web permettant d'importer plusieurs documents, de choisir leur langue et une langue de destination, puis de récupérer les documents traduits pour les imprimer. Français, anglais, espagnol et allemand sont disponibles dans les deux sens.
 
 L'application est implémentée en Python et Streamlit. Elle propose uniquement la traduction de documents avec deux moteurs au choix : GPT (OpenAI) et DeepL. Configurez la clé du moteur choisi dans `.env`.
 
 ## Parcours utilisateur
 
 1. Importer un ou plusieurs fichiers Word (`.docx`) ou PDF (`.pdf`).
-2. Choisir la **Langue du document** et la **Langue souhaitée** pour le lot : français, anglais, espagnol, allemand ou chinois simplifié. Tous les fichiers du lot doivent partager la même langue source. Deux langues identiques désactivent la traduction.
+2. Choisir la **Langue du document** et la **Langue souhaitée** pour le lot : français, anglais, espagnol ou allemand. Tous les fichiers du lot doivent partager la même langue source. Deux langues identiques désactivent la traduction.
 3. Choisir **OpenAI** ou **DeepL**, accepter l'envoi du contenu au moteur choisi, puis cliquer sur **Traduire le lot**.
 4. Voir l'avancement et le résultat de chaque fichier.
 5. Télécharger chaque document traduit ou une archive ZIP contenant tous les résultats.
@@ -155,7 +155,7 @@ Le projet inclut également `examples/` (trois PDF fictifs) et `tests/` (vérifi
 
 1. Valider le nombre, le format et la taille des fichiers avant l'envoi.
 2. Pour DeepL, créer un dossier temporaire isolé par document et utiliser des noms internes uniques. Pour OpenAI, extraire et reconstruire le texte en mémoire.
-3. Transmettre la langue source et la langue cible choisies à chaque document. Par exemple anglais → français ou chinois → français.
+3. Transmettre la langue source et la langue cible choisies à chaque document. Par exemple anglais → français ou allemand → français.
 4. Traiter les fichiers l'un après l'autre : envoyer, attendre le résultat, récupérer le document traduit.
 5. Afficher un état par fichier : en attente, en cours, terminé ou en erreur.
 6. Conserver les résultats en mémoire pour les téléchargements, puis supprimer les fichiers temporaires avec un gestionnaire de contexte.
@@ -170,10 +170,9 @@ Utiliser l'état de session Streamlit pour conserver les résultats et éviter q
 | Anglais britannique | `EN-GB` |
 | Espagnol | `ES` |
 | Allemand | `DE` |
-| Chinois simplifié | `ZH-HANS` |
 | Français | `FR` |
 
-Les codes source DeepL sont `FR`, `EN`, `ES`, `DE` et `ZH`. Les variantes cibles `EN-GB` et `ZH-HANS` sont normalisées pour détecter les choix de même langue. GPT reçoit les noms complets des langues source et cible dans ses instructions. La détection automatique n'est pas activée ; le choix est manuel.
+Les codes source DeepL sont `FR`, `EN`, `ES` et `DE`. La variante cible `EN-GB` est normalisée pour détecter les choix de même langue. GPT reçoit les noms complets des langues source et cible dans ses instructions. La détection automatique n'est pas activée ; le choix est manuel.
 
 Vérifier les langues disponibles auprès de l'API lors de l'intégration. Pour commencer, une seule langue cible par lot suffit.
 
@@ -240,7 +239,7 @@ DEEPL_API_KEY=
 
 Vous pouvez laisser `DEEPL_API_KEY` vide pour l'instant et l'ajouter plus tard. Les deux clés sont indépendantes. OpenAI est proposé par défaut dans l'interface. Le modèle est configurable via `OPENAI_MODEL` ; il doit être accessible au compte et prendre en charge Responses et les sorties structurées. L'API OpenAI est facturée à l'usage et nécessite un crédit API utilisable.
 
-OpenAI recrée un document avec une mise en page simple : images, styles, structure visuelle des tableaux, en-têtes et pieds de page ne sont pas conservés. Les lignes du PDF sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Les fichiers Word contiennent le texte du corps et des cellules de tableau, dans leur ordre de lecture. Pour les PDF chinois, une police CJK est utilisée ; pour Word, une police asiatique est déclarée. Relire les traductions techniques avant utilisation.
+OpenAI recrée un document avec une mise en page simple : images, styles, structure visuelle des tableaux, en-têtes et pieds de page ne sont pas conservés. Les lignes du PDF sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Les fichiers Word contiennent le texte du corps et des cellules de tableau, dans leur ordre de lecture. Relire les traductions techniques avant utilisation.
 
 Les appels OpenAI utilisent `store=False`, une sortie JSON structurée et aucune relance automatique. Une réponse refusée, tronquée ou comportant un nombre incorrect de blocs n'est pas exportée. Si une requête échoue après le début du traitement, les requêtes déjà effectuées peuvent avoir consommé du crédit. Une relance manuelle retraduit le document complet.
 
@@ -256,6 +255,10 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
+Périmètre actuel : français, anglais, espagnol et allemand. Le glossaire est
+en version 2 ; **82 tests passent dans Docker** après réduction aux quatre
+langues. Les résultats ci-dessous sur des versions antérieures sont historiques.
+
 Validation du glossaire le 21 octobre 2026 : **99 tests réussis dans Docker**,
 avec fournisseurs simulés et sans accès réseau. Ils couvrent notamment les
 paires de langues du glossaire, le guidage GPT, les alertes pour les deux
@@ -267,9 +270,9 @@ linguistique des propositions du glossaire.
 .\.venv\Scripts\python.exe -m pytest -q
 ```
 
-Les tests de traduction utilisent des clients simulés, sans transmission ni facturation. Ils vérifient les deux moteurs, l'absence de retraduction au téléchargement, les résultats incomplets, l'extraction Word et les caractères chinois dans les PDF. Une vérification avec un véritable compte OpenAI ou DeepL reste nécessaire pour confirmer le rendu traduit et les limites du compte.
+Les tests de traduction utilisent des clients simulés, sans transmission ni facturation. Ils vérifient les deux moteurs, l'absence de retraduction au téléchargement, les résultats incomplets, l'extraction Word et les caractères accentués dans les PDF. Une vérification avec un véritable compte OpenAI ou DeepL reste nécessaire pour confirmer le rendu traduit et les limites du compte.
 
-Validation du 12 octobre 2026 : 18 tests passent. Un rapport d'incident fictif a été traduit vers l'anglais avec l'API OpenAI réelle et le PDF obtenu a été vérifié visuellement. Les sorties PDF dans les quatre langues ont été vérifiées avec des textes de contrôle, sans appels de traduction supplémentaires. La traduction réelle en espagnol, allemand et chinois et les appels DeepL restent à vérifier. Les premiers essais OpenAI incomplets ont été rejetés ; le schéma exige désormais une propriété obligatoire pour chaque bloc de texte.
+Validation du 12 octobre 2026 : 18 tests passent. Un rapport d'incident fictif a été traduit vers l'anglais avec l'API OpenAI réelle et le PDF obtenu a été vérifié visuellement. Les sorties PDF dans les langues alors proposées ont été vérifiées avec des textes de contrôle, sans appels de traduction supplémentaires. La traduction réelle en espagnol et allemand et les appels DeepL restent à vérifier. Les premiers essais OpenAI incomplets ont été rejetés ; le schéma exige désormais une propriété obligatoire pour chaque bloc de texte.
 
 ## Ordre de réalisation
 

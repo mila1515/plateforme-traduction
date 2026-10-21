@@ -12,7 +12,7 @@ import unicodedata
 
 
 DEFAULT_PATH = Path(__file__).resolve().parents[1] / 'data' / 'glossaries' / 'technical.json'
-LANGUAGE_CODES = {'FR', 'EN', 'ES', 'DE', 'ZH'}
+LANGUAGE_CODES = {'FR', 'EN', 'ES', 'DE'}
 
 
 def _require(condition):
@@ -22,7 +22,7 @@ def _require(condition):
 
 
 def normalize_language(code):
-    """Relier EN-GB à EN et ZH-HANS à ZH sans changer les codes des API."""
+    """Relier EN-GB à EN sans changer les codes des API."""
     language = code.split('-')[0]
     if language not in LANGUAGE_CODES:
         raise ValueError('Langue non prise en charge par le glossaire.')
@@ -35,14 +35,13 @@ def normalize_text(text):
 
 
 def contains_term(text, term, language):
-    """Éviter « porte » dans « transporter » ; utiliser des sous-chaînes en chinois.
+    """Éviter « porte » dans « transporter » grâce aux limites de mots.
 
     Pas d'analyse grammaticale : les pluriels et flexions doivent être déclarés
     explicitement. Les mots composés allemands peuvent ne pas être reconnus.
     """
     text, term = normalize_text(text), normalize_text(term)
-    if normalize_language(language) == 'ZH':
-        return term in text
+    normalize_language(language)
     return re.search(r'(?<!\w)' + re.escape(term) + r'(?!\w)', text) is not None
 
 
@@ -88,7 +87,7 @@ def load_glossary(path=DEFAULT_PATH):
 
 
 def select_pairs(glossary, source_language, target_language, source_text=None):
-    """Construire les correspondances pour n'importe quelle paire des cinq langues.
+    """Construire les correspondances pour n'importe quelle paire des quatre langues.
 
     Avec source_text, ne conserver que les termes rencontrés. Le premier terme
     cible est préféré ; les suivants sont des variantes admises au contrôle.

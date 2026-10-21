@@ -4,8 +4,8 @@
 
 Le fichier [technical.json](../data/glossaries/technical.json) regroupe 12
 notions documentaires et techniques. Chaque notion contient ses termes et
-variantes dans les cinq langues du projet : `FR`, `EN`, `ES`, `DE`, `ZH`.
-Les codes cibles `EN-GB` et `ZH-HANS` sont normalisés uniquement pour la
+variantes dans les quatre langues du projet : `FR`, `EN`, `ES`, `DE`.
+Le code cible `EN-GB` est normalisé uniquement pour la
 recherche dans le glossaire ; les codes envoyés aux moteurs restent inchangés.
 Toutes les paires distinctes sont disponibles, y compris vers le français.
 
@@ -43,7 +43,7 @@ et données distinctes décrit dans la
 
 1. Ouvrir `data/glossaries/technical.json` en UTF-8. Copier la structure d'une
    entrée existante, avec un `id` unique et un contexte précis.
-2. Renseigner les cinq langues. La première valeur de chaque liste est la
+2. Renseigner les quatre langues. La première valeur de chaque liste est la
    traduction préférée ; les suivantes sont des variantes admises. Déclarer
    les pluriels ou flexions utiles, sans ajouter des mots de sens différent.
 3. Éviter d'attribuer le même terme normalisé à deux notions différentes : le
@@ -51,7 +51,7 @@ et données distinctes décrit dans la
    spécialisé. Le fichier est limité à 200 notions pour ce prototype.
 4. Augmenter `version`, laisser ou remettre `status` à `proposed`, et remettre
    `reviewed_by` et `reviewed_at` à `null` après toute modification non relue.
-5. Faire vérifier les cinq langues et les contextes par des personnes compétentes.
+5. Faire vérifier les quatre langues et les contextes par des personnes compétentes.
    Passer à `approved` seulement après cette validation, en renseignant
    `reviewed_by` et `reviewed_at` au format `AAAA-MM-JJ`. Cette validation porte
    sur le fichier entier ; elle est déclarative et ne remplace pas une relecture
@@ -67,10 +67,7 @@ et données distinctes décrit dans la
 
 La détection ignore la casse, les variantes Unicode, les apostrophes courbes
 et les espaces multiples. Les limites de mots évitent par exemple de trouver
-« porte » dans « transporter ». En chinois, le contrôle utilise des sous-chaînes
-car les mots ne sont pas séparés par des espaces. Cela peut aussi reconnaître
-un caractère à l'intérieur d'un mot d'un autre sens : par exemple `门` dans
-`部门`. Le contexte et la relecture restent nécessaires.
+« porte » dans « transporter ». Le contexte et la relecture restent nécessaires.
 
 Ce contrôle ne fait pas d'analyse grammaticale. Des flexions non déclarées,
 des mots composés allemands ou une paraphrase correcte peuvent produire une

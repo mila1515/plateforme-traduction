@@ -3,9 +3,9 @@ from tempfile import TemporaryDirectory
 import deepl
 import openai
 
-LANGUAGES = {'Anglais britannique': 'EN-GB', 'Espagnol': 'ES', 'Allemand': 'DE', 'Chinois simplifié': 'ZH-HANS', 'Français': 'FR'}
-SOURCE_LANGUAGES = {'Français': 'FR', 'Anglais': 'EN', 'Espagnol': 'ES', 'Allemand': 'DE', 'Chinois simplifié': 'ZH'}
-SOURCE_NAMES = {'FR': 'French', 'EN': 'English', 'ES': 'Spanish', 'DE': 'German', 'ZH': 'Simplified Chinese'}
+LANGUAGES = {'Anglais britannique': 'EN-GB', 'Espagnol': 'ES', 'Allemand': 'DE', 'Français': 'FR'}
+SOURCE_LANGUAGES = {'Français': 'FR', 'Anglais': 'EN', 'Espagnol': 'ES', 'Allemand': 'DE'}
+SOURCE_NAMES = {'FR': 'French', 'EN': 'English', 'ES': 'Spanish', 'DE': 'German'}
 
 
 def validate_language_pair(source_language, target_language):

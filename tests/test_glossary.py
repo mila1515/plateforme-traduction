@@ -13,8 +13,8 @@ from services.quality import check_translation
 from services.review import build_review
 
 
-@pytest.mark.parametrize('source', ['FR', 'EN', 'ES', 'DE', 'ZH'])
-@pytest.mark.parametrize('target', ['FR', 'EN-GB', 'ES', 'DE', 'ZH-HANS'])
+@pytest.mark.parametrize('source', ['FR', 'EN', 'ES', 'DE'])
+@pytest.mark.parametrize('target', ['FR', 'EN-GB', 'ES', 'DE'])
 def test_all_language_pairs_available(source, target):
     glossary = load_glossary()
     pairs = select_pairs(glossary, source, target)
@@ -23,10 +23,9 @@ def test_all_language_pairs_available(source, target):
     assert len(glossary['sha256']) == 64
 
 
-def test_boundaries_variants_and_chinese():
+def test_boundaries_and_variants():
     assert not contains_term('transporter', 'porte', 'FR')
     assert contains_term('Un RAPPORT D’INCIDENT.', "rapport d'incident", 'FR')
-    assert contains_term('检查传感器。', '传感器', 'ZH-HANS')
     pairs = select_pairs(load_glossary(), 'FR', 'ES', 'Les portes sont fermées.')
     assert [pair['id'] for pair in pairs] == ['door']
     assert check_translation('Les portes sont fermées.', 'Las puertas están cerradas.', pairs)['issues'] == []
@@ -47,7 +46,7 @@ def test_missing_term_alert_and_prompt_contains_only_relevant_entries():
 def test_invalid_glossary_rejected_before_use(tmp_path, mutation):
     document = deepcopy(load_glossary())
     if mutation == 'missing_language':
-        del document['entries'][0]['terms']['ZH']
+        del document['entries'][0]['terms']['DE']
     elif mutation == 'duplicate_id':
         document['entries'][1]['id'] = document['entries'][0]['id']
     elif mutation == 'conflicting_term':

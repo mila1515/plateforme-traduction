@@ -5,21 +5,17 @@ import re
 from xml.sax.saxutils import escape
 
 from docx import Document
-from docx.oxml import OxmlElement
-from docx.oxml.ns import qn
 from docx.shared import Pt, Cm
 from docx.table import Table
 from openai import OpenAI
 from pypdf import PdfReader
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.cidfonts import UnicodeCIDFont
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from services.translation import SOURCE_NAMES, validate_language_pair
 from services.glossary import prompt_guidance
 
-TARGETS = {'EN-GB': 'British English', 'ES': 'Spanish', 'DE': 'German', 'ZH-HANS': 'Simplified Chinese', 'FR': 'French'}
+TARGETS = {'EN-GB': 'British English', 'ES': 'Spanish', 'DE': 'German', 'FR': 'French'}
 MAX_TEXT = 60_000
 BATCH_SIZE = 6_000
 MAX_BATCH_BLOCKS = 40
@@ -98,22 +94,12 @@ def render_document(blocks, suffix, language):
         style = doc.styles['Normal']
         style.font.name, style.font.size = 'Arial', Pt(11)
         style.paragraph_format.space_after = Pt(7)
-        if language == 'ZH-HANS':
-            fonts = style.element.get_or_add_rPr().find(qn('w:rFonts'))
-            if fonts is None:
-                fonts = OxmlElement('w:rFonts')
-                style.element.get_or_add_rPr().append(fonts)
-            fonts.set(qn('w:eastAsia'), 'Microsoft YaHei')
         for block in blocks:
             doc.add_paragraph(block)
         doc.save(buffer)
     elif suffix == '.pdf':
-        chinese = language == 'ZH-HANS'
-        font = 'STSong-Light' if chinese else 'Helvetica'
-        if chinese and font not in pdfmetrics.getRegisteredFontNames():
-            pdfmetrics.registerFont(UnicodeCIDFont(font))
-        style = ParagraphStyle('TranslatedBody', fontName=font, fontSize=11, leading=16,
-                               spaceAfter=8, wordWrap='CJK' if chinese else None)
+        style = ParagraphStyle('TranslatedBody', fontName='Helvetica', fontSize=11, leading=16,
+                               spaceAfter=8)
         story = [Paragraph(escape(block).replace('\n', '<br/>'), style) for block in blocks]
         SimpleDocTemplate(buffer, pagesize=A4, leftMargin=45, rightMargin=45,
                           topMargin=45, bottomMargin=45).build(story)

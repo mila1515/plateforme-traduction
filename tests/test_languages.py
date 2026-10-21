@@ -6,10 +6,17 @@ from io import BytesIO
 import pytest
 from pypdf import PdfReader
 from services.translation import SOURCE_LANGUAGES, LANGUAGES, translate_document
-from services.openai_translation import translate_openai_document
+from services.openai_translation import translate_openai_document, TARGETS
+from services.glossary import LANGUAGE_CODES, load_glossary
 
 PAIRS = [(source, target) for source in SOURCE_LANGUAGES.values() for target in LANGUAGES.values()
          if source != target.split('-')[0]]
+
+
+def test_supported_languages_consistent_across_engines_and_glossary():
+    assert set(SOURCE_LANGUAGES.values()) == LANGUAGE_CODES == {'FR', 'EN', 'ES', 'DE'}
+    assert set(LANGUAGES.values()) == set(TARGETS) == {'FR', 'EN-GB', 'ES', 'DE'}
+    assert all(set(entry['terms']) == LANGUAGE_CODES for entry in load_glossary()['entries'])
 
 
 @pytest.mark.parametrize('source,target', PAIRS)
@@ -21,19 +28,19 @@ def test_deepl_language_pairs(source, target):
     assert translate_document(b'input', '.pdf', target, 'fake', client=Client(), source_language=source) == b'translated'
 
 
-@pytest.mark.parametrize('source,text', [('EN', 'Incident report'), ('ZH', '事件报告')])
+@pytest.mark.parametrize('source,text', [('EN', 'Incident report'), ('DE', 'Vorfallbericht')])
 def test_openai_to_french(source, text):
     class Client:
         def __init__(self):
             self.responses = self
         def create(self, **kwargs):
-            assert f"{'English' if source == 'EN' else 'Simplified Chinese'} text block into French" in kwargs['instructions']
+            assert f"{'English' if source == 'EN' else 'German'} text block into French" in kwargs['instructions']
             return SimpleNamespace(status='completed', output_text=json.dumps({'translations': {'block_000': 'Rapport d’incident'}}))
     data = translate_openai_document(b'', '.pdf', 'FR', 'fake', client=Client(), blocks=[text], source_language=source)
     assert 'Rapport d’incident' in PdfReader(BytesIO(data)).pages[0].extract_text()
 
 
-@pytest.mark.parametrize('source,target', [('FR', 'FR'), ('EN', 'EN-GB'), ('ZH', 'ZH-HANS'), ('ES', 'ES'), ('DE', 'DE')])
+@pytest.mark.parametrize('source,target', [('FR', 'FR'), ('EN', 'EN-GB'), ('ES', 'ES'), ('DE', 'DE')])
 def test_same_language_rejected_before_api(source, target):
     with pytest.raises(ValueError, match='différente'):
         translate_document(b'', '.pdf', target, 'fake', source_language=source)

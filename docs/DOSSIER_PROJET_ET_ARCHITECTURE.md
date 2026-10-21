@@ -1,7 +1,11 @@
 # Dossier de la plateforme de traduction documentaire
 
+Périmètre actuel : quatre langues (français, anglais, espagnol, allemand),
+glossaire version 2. Après adaptation, 82 tests passent dans Docker. Les
+nombres de tests mentionnés dans les étapes antérieures sont historiques.
+
 Évolution glossaire du 21 octobre 2026 : un glossaire local de démonstration
-pour les cinq langues est désormais intégré en option. Il guide GPT et
+pour les quatre langues est désormais intégré en option. Il guide GPT et
 contrôle les termes après traduction pour les deux moteurs. Tous les termes
 restent proposés, sans validation métier. Voir [l'architecture actuelle](architecture.md)
 et le [guide du glossaire](glossary.md) ; les parties entreprise ci-dessous
@@ -23,7 +27,7 @@ Mise à jour : 20 octobre 2026. État décrit : prototype local Python et Stream
 
 ## 1. Présentation du projet
 
-Le projet est une application web qui traduit des documents PDF ou Word entre le français, l'anglais, l'espagnol, l'allemand et le chinois simplifié. L'utilisateur importe plusieurs fichiers, choisit leur langue source, une langue de destination et un moteur de traduction : GPT via l'API OpenAI ou DeepL. Il télécharge ensuite les documents traduits, individuellement ou dans une archive ZIP, et peut les imprimer depuis Word ou son lecteur PDF.
+Le projet est une application web qui traduit des documents PDF ou Word entre le français, l'anglais, l'espagnol et l'allemand. L'utilisateur importe plusieurs fichiers, choisit leur langue source, une langue de destination et un moteur de traduction : GPT via l'API OpenAI ou DeepL. Il télécharge ensuite les documents traduits, individuellement ou dans une archive ZIP, et peut les imprimer depuis Word ou son lecteur PDF.
 
 La plateforme organise le parcours documentaire autour des moteurs de traduction existants. Elle ne développe pas son propre modèle d'intelligence artificielle. Sa valeur réside dans l'import multiple, les contrôles des fichiers, le choix du fournisseur, la récupération des résultats et, à terme, la traçabilité et la validation des traductions.
 
@@ -88,7 +92,7 @@ Une même personne peut avoir plusieurs rôles. Le rôle de réviseur ne doit pa
 | --- | --- |
 | Formats d'entrée | PDF contenant du texte et Word `.docx` |
 | Import multiple | Jusqu'à 5 fichiers par lot, 5 Mo par fichier |
-| Langue source | Choix manuel parmi les cinq langues |
+| Langue source | Choix manuel parmi les quatre langues |
 | Langue cible | Même ensemble ; anglais britannique en sortie |
 | Langues identiques | Traduction désactivée et contrôle dans les services |
 | Lot | Une langue source, une langue cible et un moteur communs |
@@ -304,7 +308,7 @@ La revue des imports et des appels n'a identifié aucune fonction applicative in
 | SDK DeepL | Traduction documentaire | Envoi d'un fichier complet |
 | pypdf | Lecture et contrôles PDF | Extraction du texte et inspection du document |
 | python-docx | Lecture et écriture Word | Parcours du corps, tableaux et création DOCX |
-| ReportLab | Création PDF | Génération de pages imprimables et support CJK configuré |
+| ReportLab | Création PDF | Génération de pages imprimables et caractères des langues prises en charge |
 | python-dotenv | Configuration locale | Chargement des paramètres du projet |
 | Bibliothèque standard Python | ZIP, octets et fichiers temporaires | Peu de dépendances supplémentaires |
 | Docker et Compose | Déploiement local | Environnement reproductible et lancement simple |
@@ -579,10 +583,10 @@ La qualité a trois dimensions différentes : fichier exploitable, contenu compl
 | Unités et valeurs | Température, durée, distance | Comparer selon les règles de conversion approuvées |
 | Glossaire métier | Porte, défaut, contrôle, consignation | Appliquer des termes approuvés par le métier |
 | Négations et obligations | « Ne pas utiliser », « doit », « peut » | Prioriser la relecture des passages concernés |
-| Présentation | Tableau tronqué, caractères chinois manquants | Bloquer ou demander correction |
+| Présentation | Tableau tronqué, caractères accentués manquants | Bloquer ou demander correction |
 | Source de mauvaise qualité | Scan illisible ou ordre de colonnes incertain | Demander une meilleure source ou une validation renforcée |
 
-Construire un corpus d'évaluation avec des documents représentatifs et des traductions approuvées : courts et longs, tableaux, accents, chinois, unités, références et négations. Évaluer GPT et DeepL sur ce corpus plutôt que choisir un moteur uniquement sur sa réputation.
+Construire un corpus d'évaluation avec des documents représentatifs et des traductions approuvées : courts et longs, tableaux, accents, unités, références et négations. Évaluer GPT et DeepL sur ce corpus plutôt que choisir un moteur uniquement sur sa réputation.
 
 Pour une fiche ferroviaire pouvant influencer une décision opérationnelle, prévoir une relecture par une personne compétente et afficher clairement le statut « brouillon automatique » tant que la validation n'a pas été obtenue. Le glossaire doit être validé par les métiers ; une correspondance de mots ne suffit pas à résoudre tous les contextes.
 
@@ -648,7 +652,7 @@ Répartition conseillée : le responsable produit fixe les priorités ; les mét
 | Famille | Vérifications attendues |
 | --- | --- |
 | Fonctionnel | Import, langues dans les deux sens, choix fournisseur, téléchargements et erreurs individuelles |
-| Documents | PDF textuels et scans, DOCX avec tableaux, caractères chinois, fichiers corrompus et trop volumineux |
+| Documents | PDF textuels et scans, DOCX avec tableaux, caractères accentués, fichiers corrompus et trop volumineux |
 | Qualité | Références, nombres, unités, négations, glossaire et fidélité du sens |
 | Sécurité | Authentification, accès interservices, téléchargements, secrets et fichiers malveillants |
 | Reprise | Arrêt worker, interruption réseau, doublon de tâche, réponse fournisseur incertaine |
@@ -666,7 +670,7 @@ Le 20 octobre 2026, les **52 tests ont réussi en 12,01 secondes**, avec la comm
 
 Le premier lancement en environnement restreint donnait 31 réussites et 21 échecs de permissions lors de l'écriture ou du nettoyage des dossiers temporaires Windows. La même suite a ensuite réussi hors de ces restrictions. Aucun changement de logique applicative n'a été nécessaire pour cette vérification.
 
-Les tests couvrent notamment les paires de langues DeepL avec un client simulé, le refus des langues identiques, l'extraction Word et PDF, les limites de découpage, les réponses GPT incomplètes ou vides, les sorties PDF dans plusieurs langues dont le chinois, les noms de fichiers, le ZIP, le nettoyage des temporaires et des comportements de l'interface Streamlit.
+Les tests couvrent notamment les paires de langues DeepL avec un client simulé, le refus des langues identiques, l'extraction Word et PDF, les limites de découpage, les réponses GPT incomplètes ou vides, les sorties PDF dans plusieurs langues européennes, les noms de fichiers, le ZIP, le nettoyage des temporaires et des comportements de l'interface Streamlit.
 
 Les fournisseurs sont simulés : cette exécution n'envoie aucun document et ne consomme aucun crédit de traduction. Elle ne valide pas la disponibilité d'un compte API, la qualité linguistique réelle, la charge ou la sécurité d'une version entreprise.
 
