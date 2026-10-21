@@ -1,0 +1,9 @@
+services:
+  traduction:
+    build: .
+    image: platforme-traduction:local
+    ports:
+      - "127.0.0.1:8502:8501"
+    env_file:
+      - .env
+    restart: unless-stopped

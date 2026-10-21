@@ -1,0 +1,10 @@
+# Allow only application inputs. Keys, history, virtualenv and temporary files
+# are excluded from the build context, not merely from the final image.
+*
+!Dockerfile
+!requirements.txt
+!app.py
+!services/
+!services/*.py
+!.streamlit/
+!.streamlit/config.toml
