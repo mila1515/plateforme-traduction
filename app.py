@@ -13,6 +13,7 @@ from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document
 from services.openai_translation import extract_blocks, translate_openai_document
 from services.glossary import load_glossary, select_pairs
 from services.review import build_review, readable_alerts
+from services.semantic_review import review_meaning, fingerprint, MAX_REVIEW_TEXT
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -126,9 +127,51 @@ if 'results' in st.session_state:
                             with st.container(height=320, border=True):
                                 st.text(comparison['translation'])
                         st.caption('Texte extrait, sans reproduction de la mise en page ni alignement garanti des paragraphes. Vérifiez les tableaux et images dans les fichiers téléchargés.')
+                        st.markdown('**Analyse du sens par IA**')
+                        st.caption('Cherche les contresens, négations inversées, omissions et ajouts. Avis indicatif à confirmer par une personne bilingue ; les textes ne sont pas corrigés automatiquement.')
+                        review_key = os.getenv('OPENAI_API_KEY', '').strip()
+                        review_model = os.getenv('OPENAI_REVIEW_MODEL', '').strip() or model
+                        pair_id = fingerprint(comparison['source'], comparison['translation'])
+                        oversized = max(len(comparison['source']), len(comparison['translation'])) > MAX_REVIEW_TEXT
+                        if oversized:
+                            st.info('Analyse du sens limitée à 12 000 caractères par texte. Le document complet dépasse cette limite et ne sera pas envoyé pour analyse.')
+                        if not review_key:
+                            st.caption('Une clé OpenAI est nécessaire à cette analyse, même si le document a été traduit par DeepL.')
+                        st.caption(f'Moteur d’analyse : OpenAI · {review_model}. Un appel supplémentaire payant pour les deux textes complets. Le moteur peut être le même que celui de traduction.')
+                        review_consent = st.checkbox('J’autorise l’envoi de l’original et de la traduction à OpenAI pour cette analyse supplémentaire payante.', key=f'semantic_consent_{index}_{pair_id}')
+                        if st.button('Analyser le sens', key=f'semantic_run_{index}_{pair_id}',
+                                     disabled=not review_key or not review_consent or oversized or 'semantic_review' in result):
+                            with st.spinner('Analyse du sens…'):
+                                try:
+                                    result['semantic_review'] = review_meaning(
+                                        comparison['source'], comparison['translation'], quality['source_language'],
+                                        quality['target_language'], review_key, model=review_model)
+                                    result.pop('semantic_error', None)
+                                except Exception as exc:
+                                    result['semantic_error'] = error_message(exc)
+                        if result.get('semantic_error'):
+                            st.error(result['semantic_error'])
+                        semantic = result.get('semantic_review')
+                        if semantic:
+                            if semantic['assessment'] == 'suspected_issues':
+                                st.warning('Des problèmes de sens sont suspectés. Vérifiez les passages ci-dessous.')
+                            elif semantic['assessment'] == 'inconclusive':
+                                st.warning('L’IA ne peut pas conclure sur le sens. Relecture humaine nécessaire.')
+                            else:
+                                st.info('Aucun problème de sens signalé par l’IA. Cela ne valide pas la traduction.')
+                            st.text(semantic['summary'])
+                            for number, issue in enumerate(semantic['issues'], 1):
+                                severity = {'critical': 'critique', 'major': 'majeur', 'minor': 'mineur'}[issue['severity']]
+                                st.caption(f'Passage {number} · problème potentiel {severity}')
+                                st.text('Original : ' + (issue['source_quote'] or '(aucun passage correspondant)'))
+                                st.text('Traduction : ' + (issue['translation_quote'] or '(passage potentiellement omis)'))
+                                st.text(issue['explanation'])
+                            st.download_button('Télécharger l’analyse du sens', json.dumps(semantic, ensure_ascii=False, indent=2),
+                                               result['name'] + '.semantic.json', 'application/json', key=f'semantic_report_{index}')
                     else:
                         st.info('Comparaison indisponible pour ce résultat. Vous pouvez toujours télécharger le document.')
                     if quality and quality['status'] != 'unavailable':
+                        st.caption('Contrôles complémentaires : nombres, références et glossaire. Ils ne jugent pas le sens.')
                         messages = readable_alerts(quality)
                         if messages:
                             for message in messages:

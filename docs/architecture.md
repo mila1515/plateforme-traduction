@@ -23,6 +23,7 @@ platforme/
 │   ├── glossary.py                Validation du JSON, sélection, consignes, termes
 │   ├── quality.py                 Contrôles locaux des nombres, références, termes
 │   └── review.py                  Extraction après traduction et rapport traçable
+│   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés
@@ -85,6 +86,11 @@ enregistrées séparément du rapport dans le résultat de session. Il affiche
 les textes côte à côte et des alertes lisibles sans nouveau traitement fournisseur.
 Les paragraphes ne sont pas alignés automatiquement. Aucune copie du texte
 complet n'est ajoutée au rapport JSON téléchargé.
+
+`semantic_review.py` peut analyser la paire de textes à la demande, après un
+consentement distinct à l'envoi à OpenAI. Cet appel supplémentaire n'est pas
+automatique et ne change pas le document ; son résultat reste séparé du rapport
+local. Voir [le contrat de l'analyse du sens](semantic-review.md).
 
 Pour Word, `word_documents.py` conserve l'archive source et ses propriétés.
 Le même ordre de groupes textuels est utilisé pour l'extraction et la

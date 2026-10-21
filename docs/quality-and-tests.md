@@ -4,13 +4,13 @@
 
 | Vérification | Moyen utilisé aujourd'hui | Ce qu'elle prouve |
 | --- | --- | --- |
-| Fonctionnement du logiciel | 87 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, langues, erreurs, rapports et structure Word |
+| Fonctionnement du logiciel | 104 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, langues, erreurs, rapports, comparaison et avis IA structuré |
 | Alertes sur une traduction | Comparaisons locales des nombres, références et termes | Détection de certains écarts dans le texte extractible |
 | Qualité linguistique réelle | Corpus de 20 passages et formulaire de relecture, à remplir | Aucun résultat mesuré avec ce protocole à ce jour |
 
-La dernière suite complète a réussi dans Docker : **87 tests**. Cette mise à
-jour documentaire ne relance pas les tests ni les fournisseurs. Les anciennes
-mentions de 18, 52, 63, 82 ou 99 tests sont des états historiques, pas le
+La dernière suite complète a réussi dans Docker : **104 tests**, après ajout
+de l'analyse du sens à la demande, sans appel fournisseur réel. Les anciennes
+mentions de 18, 52, 63, 82, 87, 90 ou 99 tests sont des états historiques, pas le
 nombre actuel. Le retrait d'une langue a supprimé des cas paramétrés ; un
 nombre de tests plus élevé ne signifie pas automatiquement une meilleure qualité.
 
@@ -78,7 +78,8 @@ les régressions de nos contrôles sur ces réponses conservées, sans mesurer
 le comportement actuel du fournisseur. Le projet n'a pas encore de mécanisme
 automatique d'enregistrement/rejeu de réponses réelles.
 
-Un second LLM pourrait aider à prioriser la relecture après calibration sur
-des jugements humains. Il peut lui-même se tromper ; il ne remplace pas la
-validation métier. Ni ce juge, ni une campagne réelle automatique, ni une
-intégration continue GitHub Actions ne sont implémentés aujourd'hui.
+Un avis IA sur le sens est désormais disponible à la demande dans la
+comparaison ; voir [son contrat et ses limites](semantic-review.md).
+Ce juge reste à calibrer sur des jugements humains et peut lui-même se tromper.
+Il ne remplace pas la validation métier. Une campagne réelle automatique et
+une intégration continue GitHub Actions ne sont pas implémentées aujourd'hui.

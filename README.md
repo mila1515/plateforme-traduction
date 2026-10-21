@@ -14,6 +14,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
+| La vérification du sens à la demande | [Analyse du sens](docs/semantic-review.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
 | Les choix prioritaires pour un portail entreprise | [Recommandations entreprise](docs/enterprise.md) |
@@ -52,6 +53,13 @@ fichiers locaux, y compris le glossaire.
 
 ## Contrôle de qualité et évaluation
 
+Dans **Comparer les textes**, **Analyser le sens** permet maintenant de
+demander un avis IA sur les contresens, négations inversées, omissions et
+ajouts. L'option exige un consentement distinct et un appel OpenAI payant,
+même après traduction DeepL. Limite : 12 000 caractères par texte, sans
+troncature. L'avis et les citations restent à confirmer humainement ; il ne
+constitue pas une approbation. Voir [les étapes et limites](docs/semantic-review.md).
+
 Chaque résultat propose **Comparer les textes** : original et traduction
 côte à côte dans un espace replié, avec des alertes en français. La comparaison
 utilise le texte déjà extrait, sans nouvel appel IA, et ne reproduit pas la
@@ -60,7 +68,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 87 tests utilisent de faux clients API
+**Trois choses distinctes :** les 104 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -287,6 +295,9 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Dernière suite après ajout de l'analyse du sens : **104 tests réussis dans Docker**,
+avec clients simulés. Aucun appel IA réel pour valider cet ajout.
 
 Dernière suite après ajout de la comparaison : **90 tests réussis dans Docker**.
 
