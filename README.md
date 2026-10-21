@@ -10,7 +10,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | Pour comprendre ou modifier… | Lire ou ouvrir… |
 | --- | --- |
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
-| Les 12 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
+| Les 50 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
@@ -256,7 +256,7 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 ### Lancer les tests
 
 Périmètre actuel : français, anglais, espagnol et allemand. Le glossaire est
-en version 2 ; **82 tests passent dans Docker** après réduction aux quatre
+en version 3 avec 50 notions ; **82 tests passent dans Docker** pour les quatre
 langues. Les résultats ci-dessous sur des versions antérieures sont historiques.
 
 Validation du glossaire le 21 octobre 2026 : **99 tests réussis dans Docker**,

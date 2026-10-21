@@ -1,6 +1,6 @@
 {
   "id": "technical-demo",
-  "version": 2,
+  "version": 3,
   "status": "proposed",
   "reviewed_by": null,
   "reviewed_at": null,
@@ -255,6 +255,819 @@
         "DE": [
           "Ersatzteil",
           "Ersatzteile"
+        ]
+      }
+    },
+    {
+      "id": "brake",
+      "context": "Organe mécanique de freinage.",
+      "terms": {
+        "FR": [
+          "frein",
+          "freins"
+        ],
+        "EN": [
+          "brake",
+          "brakes"
+        ],
+        "ES": [
+          "freno",
+          "frenos"
+        ],
+        "DE": [
+          "Bremse",
+          "Bremsen"
+        ]
+      }
+    },
+    {
+      "id": "wheel",
+      "context": "Roue d'un équipement mobile.",
+      "terms": {
+        "FR": [
+          "roue",
+          "roues"
+        ],
+        "EN": [
+          "wheel",
+          "wheels"
+        ],
+        "ES": [
+          "rueda",
+          "ruedas"
+        ],
+        "DE": [
+          "Rad",
+          "Räder"
+        ]
+      }
+    },
+    {
+      "id": "axle",
+      "context": "Essieu d'un véhicule.",
+      "terms": {
+        "FR": [
+          "essieu",
+          "essieux"
+        ],
+        "EN": [
+          "axle",
+          "axles"
+        ],
+        "ES": [
+          "eje",
+          "ejes"
+        ],
+        "DE": [
+          "Achse",
+          "Achsen"
+        ]
+      }
+    },
+    {
+      "id": "bearing",
+      "context": "Roulement mécanique guidant une pièce en rotation.",
+      "terms": {
+        "FR": [
+          "roulement",
+          "roulements"
+        ],
+        "EN": [
+          "bearing",
+          "bearings"
+        ],
+        "ES": [
+          "rodamiento",
+          "rodamientos"
+        ],
+        "DE": [
+          "Wälzlager"
+        ]
+      }
+    },
+    {
+      "id": "cable",
+      "context": "Câble électrique d'un équipement.",
+      "terms": {
+        "FR": [
+          "câble",
+          "câbles"
+        ],
+        "EN": [
+          "cable",
+          "cables"
+        ],
+        "ES": [
+          "cable",
+          "cables"
+        ],
+        "DE": [
+          "Kabel"
+        ]
+      }
+    },
+    {
+      "id": "connector",
+      "context": "Connecteur électrique entre composants.",
+      "terms": {
+        "FR": [
+          "connecteur",
+          "connecteurs"
+        ],
+        "EN": [
+          "connector",
+          "connectors"
+        ],
+        "ES": [
+          "conector",
+          "conectores"
+        ],
+        "DE": [
+          "Steckverbinder"
+        ]
+      }
+    },
+    {
+      "id": "fuse",
+      "context": "Fusible de protection électrique.",
+      "terms": {
+        "FR": [
+          "fusible",
+          "fusibles"
+        ],
+        "EN": [
+          "fuse",
+          "fuses"
+        ],
+        "ES": [
+          "fusible",
+          "fusibles"
+        ],
+        "DE": [
+          "Schmelzsicherung",
+          "Schmelzsicherungen"
+        ]
+      }
+    },
+    {
+      "id": "battery",
+      "context": "Batterie électrique de stockage d'énergie.",
+      "terms": {
+        "FR": [
+          "batterie",
+          "batteries"
+        ],
+        "EN": [
+          "battery",
+          "batteries"
+        ],
+        "ES": [
+          "batería",
+          "baterías"
+        ],
+        "DE": [
+          "Batterie",
+          "Batterien"
+        ]
+      }
+    },
+    {
+      "id": "power-supply",
+      "context": "Alimentation électrique d'un équipement.",
+      "terms": {
+        "FR": [
+          "alimentation électrique",
+          "alimentations électriques"
+        ],
+        "EN": [
+          "power supply",
+          "power supplies"
+        ],
+        "ES": [
+          "alimentación eléctrica",
+          "alimentaciones eléctricas"
+        ],
+        "DE": [
+          "Stromversorgung",
+          "Stromversorgungen"
+        ]
+      }
+    },
+    {
+      "id": "voltage",
+      "context": "Tension électrique, hors contrainte mécanique.",
+      "terms": {
+        "FR": [
+          "tension électrique",
+          "tensions électriques"
+        ],
+        "EN": [
+          "voltage",
+          "voltages"
+        ],
+        "ES": [
+          "tensión eléctrica",
+          "tensiones eléctricas"
+        ],
+        "DE": [
+          "elektrische Spannung",
+          "elektrischen Spannung"
+        ]
+      }
+    },
+    {
+      "id": "electric-current",
+      "context": "Courant électrique mesuré dans un circuit.",
+      "terms": {
+        "FR": [
+          "courant électrique",
+          "courants électriques"
+        ],
+        "EN": [
+          "electric current",
+          "electrical current"
+        ],
+        "ES": [
+          "corriente eléctrica",
+          "corrientes eléctricas"
+        ],
+        "DE": [
+          "elektrischer Strom",
+          "elektrischen Strom"
+        ]
+      }
+    },
+    {
+      "id": "pressure",
+      "context": "Pression d'un fluide dans un équipement.",
+      "terms": {
+        "FR": [
+          "pression",
+          "pressions"
+        ],
+        "EN": [
+          "pressure",
+          "pressures"
+        ],
+        "ES": [
+          "presión",
+          "presiones"
+        ],
+        "DE": [
+          "Druck"
+        ]
+      }
+    },
+    {
+      "id": "speed",
+      "context": "Vitesse de déplacement, hors vitesse de rotation.",
+      "terms": {
+        "FR": [
+          "vitesse de déplacement"
+        ],
+        "EN": [
+          "travel speed",
+          "travelling speed"
+        ],
+        "ES": [
+          "velocidad de desplazamiento"
+        ],
+        "DE": [
+          "Fahrgeschwindigkeit"
+        ]
+      }
+    },
+    {
+      "id": "distance",
+      "context": "Distance physique entre deux points.",
+      "terms": {
+        "FR": [
+          "distance",
+          "distances"
+        ],
+        "EN": [
+          "distance",
+          "distances"
+        ],
+        "ES": [
+          "distancia",
+          "distancias"
+        ],
+        "DE": [
+          "Entfernung",
+          "Entfernungen"
+        ]
+      }
+    },
+    {
+      "id": "duration",
+      "context": "Durée d'un événement ou d'une opération.",
+      "terms": {
+        "FR": [
+          "durée",
+          "durées"
+        ],
+        "EN": [
+          "duration",
+          "durations"
+        ],
+        "ES": [
+          "duración",
+          "duraciones"
+        ],
+        "DE": [
+          "Dauer"
+        ]
+      }
+    },
+    {
+      "id": "mass",
+      "context": "Masse physique mesurée, hors masse électrique.",
+      "terms": {
+        "FR": [
+          "masse",
+          "masses"
+        ],
+        "EN": [
+          "mass",
+          "masses"
+        ],
+        "ES": [
+          "masa",
+          "masas"
+        ],
+        "DE": [
+          "Masse",
+          "Massen"
+        ]
+      }
+    },
+    {
+      "id": "tightening-torque",
+      "context": "Couple appliqué lors du serrage d'une fixation.",
+      "terms": {
+        "FR": [
+          "couple de serrage",
+          "couples de serrage"
+        ],
+        "EN": [
+          "tightening torque",
+          "tightening torques"
+        ],
+        "ES": [
+          "par de apriete",
+          "pares de apriete"
+        ],
+        "DE": [
+          "Anzugsdrehmoment",
+          "Anzugsdrehmomente"
+        ]
+      }
+    },
+    {
+      "id": "vibration",
+      "context": "Vibration mécanique d'un équipement.",
+      "terms": {
+        "FR": [
+          "vibration",
+          "vibrations"
+        ],
+        "EN": [
+          "vibration",
+          "vibrations"
+        ],
+        "ES": [
+          "vibración",
+          "vibraciones"
+        ],
+        "DE": [
+          "Schwingung",
+          "Schwingungen"
+        ]
+      }
+    },
+    {
+      "id": "wear",
+      "context": "Usure d'une pièce par utilisation.",
+      "terms": {
+        "FR": [
+          "usure"
+        ],
+        "EN": [
+          "wear"
+        ],
+        "ES": [
+          "desgaste"
+        ],
+        "DE": [
+          "Verschleiß"
+        ]
+      }
+    },
+    {
+      "id": "corrosion",
+      "context": "Dégradation d'un matériau par corrosion.",
+      "terms": {
+        "FR": [
+          "corrosion"
+        ],
+        "EN": [
+          "corrosion"
+        ],
+        "ES": [
+          "corrosión"
+        ],
+        "DE": [
+          "Korrosion"
+        ]
+      }
+    },
+    {
+      "id": "leak",
+      "context": "Fuite de fluide dans un circuit, hors fuite de données.",
+      "terms": {
+        "FR": [
+          "fuite",
+          "fuites"
+        ],
+        "EN": [
+          "leak",
+          "leaks",
+          "leakage"
+        ],
+        "ES": [
+          "fuga",
+          "fugas"
+        ],
+        "DE": [
+          "Leck",
+          "Lecks",
+          "Leckage"
+        ]
+      }
+    },
+    {
+      "id": "overheating",
+      "context": "Échauffement excessif d'un composant.",
+      "terms": {
+        "FR": [
+          "surchauffe",
+          "surchauffes"
+        ],
+        "EN": [
+          "overheating"
+        ],
+        "ES": [
+          "sobrecalentamiento",
+          "sobrecalentamientos"
+        ],
+        "DE": [
+          "Überhitzung",
+          "Überhitzungen"
+        ]
+      }
+    },
+    {
+      "id": "short-circuit",
+      "context": "Court-circuit électrique.",
+      "terms": {
+        "FR": [
+          "court-circuit",
+          "courts-circuits"
+        ],
+        "EN": [
+          "short circuit",
+          "short circuits"
+        ],
+        "ES": [
+          "cortocircuito",
+          "cortocircuitos"
+        ],
+        "DE": [
+          "Kurzschluss",
+          "Kurzschlüsse"
+        ]
+      }
+    },
+    {
+      "id": "visual-inspection",
+      "context": "Contrôle visuel d'un équipement.",
+      "terms": {
+        "FR": [
+          "contrôle visuel",
+          "contrôles visuels"
+        ],
+        "EN": [
+          "visual inspection",
+          "visual inspections"
+        ],
+        "ES": [
+          "inspección visual",
+          "inspecciones visuales"
+        ],
+        "DE": [
+          "Sichtprüfung",
+          "Sichtprüfungen"
+        ]
+      }
+    },
+    {
+      "id": "preventive-maintenance",
+      "context": "Maintenance destinée à prévenir une défaillance.",
+      "terms": {
+        "FR": [
+          "maintenance préventive"
+        ],
+        "EN": [
+          "preventive maintenance"
+        ],
+        "ES": [
+          "mantenimiento preventivo"
+        ],
+        "DE": [
+          "vorbeugende Instandhaltung"
+        ]
+      }
+    },
+    {
+      "id": "corrective-maintenance",
+      "context": "Maintenance réalisée après détection d'une défaillance.",
+      "terms": {
+        "FR": [
+          "maintenance corrective"
+        ],
+        "EN": [
+          "corrective maintenance"
+        ],
+        "ES": [
+          "mantenimiento correctivo"
+        ],
+        "DE": [
+          "korrektive Instandhaltung"
+        ]
+      }
+    },
+    {
+      "id": "calibration",
+      "context": "Étalonnage d'un instrument de mesure.",
+      "terms": {
+        "FR": [
+          "étalonnage",
+          "étalonnages"
+        ],
+        "EN": [
+          "calibration",
+          "calibrations"
+        ],
+        "ES": [
+          "calibración",
+          "calibraciones"
+        ],
+        "DE": [
+          "Kalibrierung",
+          "Kalibrierungen"
+        ]
+      }
+    },
+    {
+      "id": "test-procedure",
+      "context": "Document décrivant la réalisation d'un essai.",
+      "terms": {
+        "FR": [
+          "procédure d'essai",
+          "procédure d’essai",
+          "procédures d'essai"
+        ],
+        "EN": [
+          "test procedure",
+          "test procedures"
+        ],
+        "ES": [
+          "procedimiento de ensayo",
+          "procedimientos de ensayo"
+        ],
+        "DE": [
+          "Prüfverfahren"
+        ]
+      }
+    },
+    {
+      "id": "technical-drawing",
+      "context": "Dessin technique décrivant une pièce ou un assemblage.",
+      "terms": {
+        "FR": [
+          "dessin technique",
+          "dessins techniques"
+        ],
+        "EN": [
+          "technical drawing",
+          "technical drawings"
+        ],
+        "ES": [
+          "dibujo técnico",
+          "dibujos técnicos"
+        ],
+        "DE": [
+          "technische Zeichnung",
+          "technischen Zeichnung",
+          "technische Zeichnungen"
+        ]
+      }
+    },
+    {
+      "id": "serial-number",
+      "context": "Identifiant de série d'un équipement.",
+      "terms": {
+        "FR": [
+          "numéro de série",
+          "numéros de série"
+        ],
+        "EN": [
+          "serial number",
+          "serial numbers"
+        ],
+        "ES": [
+          "número de serie",
+          "números de serie"
+        ],
+        "DE": [
+          "Seriennummer",
+          "Seriennummern"
+        ]
+      }
+    },
+    {
+      "id": "work-order",
+      "context": "Ordre de travail décrivant une intervention à réaliser.",
+      "terms": {
+        "FR": [
+          "ordre de travail",
+          "ordres de travail"
+        ],
+        "EN": [
+          "work order",
+          "work orders"
+        ],
+        "ES": [
+          "orden de trabajo",
+          "órdenes de trabajo"
+        ],
+        "DE": [
+          "Arbeitsauftrag",
+          "Arbeitsaufträge"
+        ]
+      }
+    },
+    {
+      "id": "test-report",
+      "context": "Rapport présentant les résultats d'un essai.",
+      "terms": {
+        "FR": [
+          "rapport d'essai",
+          "rapport d’essai",
+          "rapports d'essai"
+        ],
+        "EN": [
+          "test report",
+          "test reports"
+        ],
+        "ES": [
+          "informe de ensayo",
+          "informes de ensayo"
+        ],
+        "DE": [
+          "Prüfbericht",
+          "Prüfberichte"
+        ]
+      }
+    },
+    {
+      "id": "nonconformity",
+      "context": "Non-conformité constatée par rapport à une exigence.",
+      "terms": {
+        "FR": [
+          "non-conformité",
+          "non-conformités"
+        ],
+        "EN": [
+          "nonconformity",
+          "nonconformities",
+          "non-conformity"
+        ],
+        "ES": [
+          "no conformidad",
+          "no conformidades"
+        ],
+        "DE": [
+          "Nichtkonformität",
+          "Nichtkonformitäten"
+        ]
+      }
+    },
+    {
+      "id": "acceptance-criteria",
+      "context": "Critères utilisés pour décider de l'acceptation d'un résultat.",
+      "terms": {
+        "FR": [
+          "critère d'acceptation",
+          "critère d’acceptation",
+          "critères d'acceptation"
+        ],
+        "EN": [
+          "acceptance criterion",
+          "acceptance criteria"
+        ],
+        "ES": [
+          "criterio de aceptación",
+          "criterios de aceptación"
+        ],
+        "DE": [
+          "Abnahmekriterium",
+          "Abnahmekriterien"
+        ]
+      }
+    },
+    {
+      "id": "measuring-instrument",
+      "context": "Instrument utilisé pour effectuer une mesure.",
+      "terms": {
+        "FR": [
+          "instrument de mesure",
+          "instruments de mesure"
+        ],
+        "EN": [
+          "measuring instrument",
+          "measuring instruments"
+        ],
+        "ES": [
+          "instrumento de medida",
+          "instrumentos de medida"
+        ],
+        "DE": [
+          "Messgerät",
+          "Messgeräte"
+        ]
+      }
+    },
+    {
+      "id": "warning-light",
+      "context": "Voyant lumineux signalant une alerte.",
+      "terms": {
+        "FR": [
+          "voyant d'alerte",
+          "voyant d’alerte",
+          "voyants d'alerte"
+        ],
+        "EN": [
+          "warning light",
+          "warning lights"
+        ],
+        "ES": [
+          "testigo de advertencia",
+          "testigos de advertencia"
+        ],
+        "DE": [
+          "Warnleuchte",
+          "Warnleuchten"
+        ]
+      }
+    },
+    {
+      "id": "replacement",
+      "context": "Remplacement d'une pièce d'équipement.",
+      "terms": {
+        "FR": [
+          "remplacement",
+          "remplacements"
+        ],
+        "EN": [
+          "replacement",
+          "replacements"
+        ],
+        "ES": [
+          "sustitución",
+          "sustituciones"
+        ],
+        "DE": [
+          "Austausch"
+        ]
+      }
+    },
+    {
+      "id": "lubrication",
+      "context": "Lubrification de pièces mécaniques.",
+      "terms": {
+        "FR": [
+          "lubrification"
+        ],
+        "EN": [
+          "lubrication"
+        ],
+        "ES": [
+          "lubricación"
+        ],
+        "DE": [
+          "Schmierung"
         ]
       }
     }

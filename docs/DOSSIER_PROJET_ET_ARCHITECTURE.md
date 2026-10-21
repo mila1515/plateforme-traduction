@@ -1,7 +1,7 @@
 # Dossier de la plateforme de traduction documentaire
 
 Périmètre actuel : quatre langues (français, anglais, espagnol, allemand),
-glossaire version 2. Après adaptation, 82 tests passent dans Docker. Les
+glossaire version 3 avec 50 notions. Après adaptation, 82 tests passent dans Docker. Les
 nombres de tests mentionnés dans les étapes antérieures sont historiques.
 
 Évolution glossaire du 21 octobre 2026 : un glossaire local de démonstration

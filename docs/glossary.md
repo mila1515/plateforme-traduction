@@ -2,7 +2,7 @@
 
 ## But et emplacement
 
-Le fichier [technical.json](../data/glossaries/technical.json) regroupe 12
+Le fichier [technical.json](../data/glossaries/technical.json) regroupe 50
 notions documentaires et techniques. Chaque notion contient ses termes et
 variantes dans les quatre langues du projet : `FR`, `EN`, `ES`, `DE`.
 Le code cible `EN-GB` est normalisé uniquement pour la
