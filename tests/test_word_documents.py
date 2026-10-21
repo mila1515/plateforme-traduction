@@ -121,12 +121,13 @@ def test_vertical_merge_not_translated_twice_and_breaks_are_retained():
 
 def test_long_word_paragraph_returns_to_original_cell():
     document = Document()
-    document.add_table(rows=1, cols=1).cell(0, 0).text = 'A' * 6500
+    # Trois phrases font trois fragments, alors qu'un découpage fixe en ferait deux.
+    document.add_table(rows=1, cols=1).cell(0, 0).text = ('A' * 3500 + '. ') * 3
     source = save(document)
     result = translate_openai_document(source, '.docx', 'DE', 'fake', client=Client())
     restored = Document(BytesIO(result))
     assert len(restored.tables[0].cell(0, 0).paragraphs) == 1
-    assert restored.tables[0].cell(0, 0).text.count('A') == 6500
+    assert restored.tables[0].cell(0, 0).text.count('A') == 10500
 
 
 def test_mismatched_source_blocks_rejected_before_billable_call():

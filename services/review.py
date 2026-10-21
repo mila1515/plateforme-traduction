@@ -1,6 +1,6 @@
 """Construire le rapport après traduction sans coupler les contrôles à Streamlit."""
 from services.glossary import select_pairs
-from services.openai_translation import extract_blocks
+from services.openai_translation import extract_blocks, TRANSLATION_PROMPT_VERSION
 from services.quality import check_translation
 
 
@@ -26,6 +26,7 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
         report = {'status': 'unavailable', 'checks': [], 'issues': [],
                   'limitations': 'Contrôle automatique indisponible : extraction impossible ou limite de texte dépassée. Relecture humaine nécessaire.'}
     report.update({'provider': provider, 'model': model,
+                   'translation_prompt_version': TRANSLATION_PROMPT_VERSION if provider == 'GPT (OpenAI)' else None,
                    'source_language': source_language, 'target_language': target_language,
                    'glossary': None if glossary is None else {
                        key: glossary[key] for key in ('id', 'version', 'status', 'sha256', 'reviewed_by', 'reviewed_at')},

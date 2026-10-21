@@ -92,6 +92,11 @@ consentement distinct à l'envoi à OpenAI. Cet appel supplémentaire n'est pas
 automatique et ne change pas le document ; son résultat reste séparé du rapport
 local. Voir [le contrat de l'analyse du sens](semantic-review.md).
 
+La traduction GPT elle-même utilise les consignes `meaning-v2`, un découpage
+privilégiant les fins de phrase et du contexte source voisin limité. Le plan
+des fragments conserve leur emplacement d'origine. Aucune recherche vectorielle
+n'intervient ; voir [sens, chunks et vecteurs](translation-context.md).
+
 Pour Word, `word_documents.py` conserve l'archive source et ses propriétés.
 Le même ordre de groupes textuels est utilisé pour l'extraction et la
 réinsertion ; les longs groupes répartis sur plusieurs requêtes reviennent

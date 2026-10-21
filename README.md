@@ -15,6 +15,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
 | La vérification du sens à la demande | [Analyse du sens](docs/semantic-review.md) |
+| La traduction naturelle et le découpage avec contexte | [Sens, chunks et vecteurs](docs/translation-context.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
 | Les choix prioritaires pour un portail entreprise | [Recommandations entreprise](docs/enterprise.md) |
@@ -68,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 104 tests utilisent de faux clients API
+**Trois choses distinctes :** les 106 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -114,6 +115,13 @@ et décisions humaines. Aucun score de qualité réelle n'a encore été mesuré
 avec ce protocole.
 
 ## Objectif
+
+Pour GPT, les consignes privilégient explicitement le sens et une formulation
+naturelle : négations, obligations, conditions et responsabilités doivent
+être conservées. Les longs passages sont découpés de préférence aux fins
+de phrase et accompagnés d'un contexte voisin limité. Aucune recherche
+vectorielle ni embeddings dans ce projet. Cela vise une meilleure fidélité,
+sans la garantir : voir [le fonctionnement et ses limites](docs/translation-context.md).
 
 Une petite application web permettant d'importer plusieurs documents, de choisir leur langue et une langue de destination, puis de récupérer les documents traduits pour les imprimer. Français, anglais, espagnol et allemand sont disponibles dans les deux sens.
 
@@ -220,7 +228,7 @@ Vérifier les langues disponibles auprès de l'API lors de l'intégration. Pour 
 - Import multiple de fichiers `.docx` et `.pdf` contenant du texte.
 - Limites applicatives proposées : 5 fichiers par lot et 5 Mo par fichier, à ajuster aux limites du compte API.
 - Traduction du document complet par DeepL, sans extraction et reconstruction manuelle des paragraphes.
-- Avec OpenAI : extraction du texte PDF, ou du corps Word, tableaux, en-têtes et pieds de page. Traduction puis réinsertion dans le Word d'origine ou création d'un PDF simple. Limite de 60 000 caractères par document, découpés en requêtes de 6 000 caractères au maximum.
+- Avec OpenAI : extraction du texte PDF, ou du corps Word, tableaux, en-têtes et pieds de page. Traduction puis réinsertion dans le Word d'origine ou création d'un PDF simple. Limite de 60 000 caractères par document et lots de 6 000 caractères de texte à traduire, avec jusqu'à 2 400 caractères de contexte en plus.
 - Sortie dans le format d'origine, avec un nom comme `rapport_EN-GB.docx`.
 - Téléchargement individuel et ZIP des traductions réussies.
 - Message clair si un format, une taille ou un document ne peut pas être traité.
@@ -295,6 +303,9 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Dernière suite après ajout du découpage avec contexte : **106 tests réussis
+dans Docker**, avec fournisseurs simulés, sans nouvel appel IA réel.
 
 Dernière suite après ajout de l'analyse du sens : **104 tests réussis dans Docker**,
 avec clients simulés. Aucun appel IA réel pour valider cet ajout.

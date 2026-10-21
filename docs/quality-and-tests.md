@@ -4,13 +4,13 @@
 
 | Vérification | Moyen utilisé aujourd'hui | Ce qu'elle prouve |
 | --- | --- | --- |
-| Fonctionnement du logiciel | 104 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, langues, erreurs, rapports, comparaison et avis IA structuré |
+| Fonctionnement du logiciel | 106 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
 | Alertes sur une traduction | Comparaisons locales des nombres, références et termes | Détection de certains écarts dans le texte extractible |
 | Qualité linguistique réelle | Corpus de 20 passages et formulaire de relecture, à remplir | Aucun résultat mesuré avec ce protocole à ce jour |
 
-La dernière suite complète a réussi dans Docker : **104 tests**, après ajout
-de l'analyse du sens à la demande, sans appel fournisseur réel. Les anciennes
-mentions de 18, 52, 63, 82, 87, 90 ou 99 tests sont des états historiques, pas le
+La dernière suite complète a réussi dans Docker : **106 tests**, après ajout
+du découpage avec contexte, sans appel fournisseur réel. Les anciennes
+mentions de 18, 52, 63, 82, 87, 90, 99 ou 104 tests sont des états historiques, pas le
 nombre actuel. Le retrait d'une langue a supprimé des cas paramétrés ; un
 nombre de tests plus élevé ne signifie pas automatiquement une meilleure qualité.
 

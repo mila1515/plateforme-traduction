@@ -8,7 +8,7 @@ from docx import Document
 from pypdf import PdfReader
 import pytest
 
-from services.openai_translation import extract_blocks, batches, render_document, translate_openai_document, parse_translations, translation_schema
+from services.openai_translation import extract_blocks, batches, split_block, render_document, translate_openai_document, parse_translations, translation_schema
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -149,3 +149,28 @@ def test_many_short_blocks_are_bounded():
     groups = list(batches(['text'] * 100))
     assert max(map(len, groups)) <= 40
     assert sum(map(len, groups)) == 100
+
+
+def test_long_passage_prefers_sentence_boundary_without_losing_source():
+    first = 'A' * 4000 + '. '
+    second = 'B' * 3000 + '.'
+    pieces = list(split_block(first + second))
+    assert pieces == [first, second]
+    assert ''.join(pieces) == first + second
+    assert max(map(len, pieces)) <= 6000
+
+
+def test_context_crosses_batches_but_is_not_exported_as_extra_content():
+    blocks = [f'Passage {index}.' for index in range(41)]
+    client = FakeClient()
+    result = translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=client, blocks=blocks)
+    assert len(client.calls) == 2
+    first_input, second_input = [json.loads(call['input']) for call in client.calls]
+    assert 'Passage 40.' in first_input['context']['after']
+    assert 'Passage 39.' in second_input['context']['before']
+    assert first_input['context']['before'] == ''
+    assert second_input['context']['after'] == ''
+    assert 'not word-for-word' in client.calls[0]['instructions']
+    assert 'negation' in client.calls[0]['instructions']
+    text = '\n'.join(page.extract_text() for page in PdfReader(BytesIO(result)).pages)
+    assert text.count('Translated Passage') == 41
