@@ -80,6 +80,12 @@ flowchart TD
    après traduction ne modifie pas le rapport du lot déjà traité et ne refait
    pas d'appel API.
 
+L'espace **Comparer les textes** réutilise les deux extractions de `review.py`,
+enregistrées séparément du rapport dans le résultat de session. Il affiche
+les textes côte à côte et des alertes lisibles sans nouveau traitement fournisseur.
+Les paragraphes ne sont pas alignés automatiquement. Aucune copie du texte
+complet n'est ajoutée au rapport JSON téléchargé.
+
 Pour Word, `word_documents.py` conserve l'archive source et ses propriétés.
 Le même ordre de groupes textuels est utilisé pour l'extraction et la
 réinsertion ; les longs groupes répartis sur plusieurs requêtes reviennent

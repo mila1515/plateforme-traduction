@@ -12,7 +12,7 @@ from services.files import MAX_FILES, MIMES, validate_document, output_name, mak
 from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document, error_message
 from services.openai_translation import extract_blocks, translate_openai_document
 from services.glossary import load_glossary, select_pairs
-from services.review import build_review
+from services.review import build_review, readable_alerts
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -84,10 +84,11 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
                             translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks, source_language=source_language, glossary_pairs=pairs)
                         else:
                             translated = translate_document(data, suffix, language, api_key, source_language=source_language)
+                        comparison = {}
                         quality = build_review(data, translated, suffix, source_language, language, provider,
                                                model=model if provider == 'GPT (OpenAI)' else None,
-                                               source_blocks=blocks, glossary=active_glossary)
-                        results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix, 'error': None, 'quality': quality})
+                                               source_blocks=blocks, glossary=active_glossary, comparison=comparison)
+                        results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix, 'error': None, 'quality': quality, 'comparison': comparison})
                     except Exception as exc:
                         results.append({'name': name, 'data': None, 'suffix': suffix, 'error': error_message(exc)})
                 progress.progress(position / len(prepared))
@@ -112,16 +113,34 @@ if 'results' in st.session_state:
                 with download_column:
                     st.download_button('Télécharger', result['data'], result['name'], MIMES[result['suffix']], key=f'result_{index}')
                 quality = result.get('quality')
+                comparison = result.get('comparison', {})
+                with st.expander('Comparer les textes'):
+                    if comparison.get('available'):
+                        source_column, target_column = st.columns(2)
+                        with source_column:
+                            st.caption(f"Original · {st.session_state.get('result_source', 'Français')}")
+                            with st.container(height=320, border=True):
+                                st.text(comparison['source'])
+                        with target_column:
+                            st.caption(f"Traduction · {st.session_state['result_language']}")
+                            with st.container(height=320, border=True):
+                                st.text(comparison['translation'])
+                        st.caption('Texte extrait, sans reproduction de la mise en page ni alignement garanti des paragraphes. Vérifiez les tableaux et images dans les fichiers téléchargés.')
+                    else:
+                        st.info('Comparaison indisponible pour ce résultat. Vous pouvez toujours télécharger le document.')
+                    if quality and quality['status'] != 'unavailable':
+                        messages = readable_alerts(quality)
+                        if messages:
+                            for message in messages:
+                                st.warning(message)
+                        else:
+                            st.caption('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
                 if quality:
-                    alert_count = len(quality.get('issues', []))
-                    summary = ('indisponibles' if quality['status'] == 'unavailable' else
-                               f'{alert_count} alerte(s)' if alert_count else 'aucun écart détecté')
-                    with st.expander(f'Contrôles · {summary}'):
+                    with st.expander('Détails et rapport de contrôle'):
                         if quality['status'] == 'unavailable':
                             st.warning(quality['limitations'])
                         else:
                             if quality['issues']:
-                                st.warning('Écarts détectés dans les contrôles. Vérifiez la source, la traduction et les termes attendus.')
                                 st.json(quality['issues'])
                             else:
                                 st.write('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')

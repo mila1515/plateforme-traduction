@@ -52,6 +52,14 @@ fichiers locaux, y compris le glossaire.
 
 ## Contrôle de qualité et évaluation
 
+Chaque résultat propose **Comparer les textes** : original et traduction
+côte à côte dans un espace replié, avec des alertes en français. La comparaison
+utilise le texte déjà extrait, sans nouvel appel IA, et ne reproduit pas la
+mise en page. Les textes restent en session ; le rapport JSON n'inclut pas
+les documents complets. Si l'extraction échoue, la comparaison est indisponible
+mais le téléchargement reste possible. Les données techniques et le rapport
+sont regroupés dans **Détails et rapport de contrôle**.
+
 **Trois choses distinctes :** les 87 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
@@ -279,6 +287,8 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Dernière suite après ajout de la comparaison : **90 tests réussis dans Docker**.
 
 Après conservation de la structure Word : **87 tests passent dans Docker**.
 Les contrôles Word comparent les ressources et le XML hors texte, y compris

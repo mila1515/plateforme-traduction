@@ -118,6 +118,10 @@ def test_interface_openai_works_without_deepl_and_keeps_results(monkeypatch):
     assert app.session_state['results'][0]['data'] == sample
     assert app.session_state['results'][0]['quality']['status'] == 'review_required'
     assert app.session_state['results'][0]['quality']['issues'] == []
+    assert app.session_state['results'][0]['comparison']['available']
+    assert app.session_state['results'][0]['comparison']['source'] == '\n'.join(extract_blocks(sample, '.pdf'))
+    assert app.session_state['results'][0]['comparison']['translation'] == app.session_state['results'][0]['comparison']['source']
+    assert 'source' not in app.session_state['results'][0]['quality']
     assert calls[0][1]['blocks']
     app.run()
     assert len(calls) == 1
