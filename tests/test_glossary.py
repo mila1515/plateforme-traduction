@@ -69,7 +69,11 @@ def test_openai_receives_preferences_and_report_records_exact_glossary():
             return SimpleNamespace(status='completed', output_text=json.dumps({'translations': {'block_000': 'The sensor is ready.'}}))
     glossary = load_glossary()
     pairs = select_pairs(glossary, 'FR', 'EN-GB')
-    result = translate_openai_document(b'', '.docx', 'EN-GB', 'fake', client=Client(),
+    source = Document()
+    source.add_paragraph('Le capteur est prêt.')
+    buffer = BytesIO()
+    source.save(buffer)
+    result = translate_openai_document(buffer.getvalue(), '.docx', 'EN-GB', 'fake', client=Client(),
                                        blocks=['Le capteur est prêt.'], glossary_pairs=pairs)
     assert Document(BytesIO(result)).paragraphs[0].text == 'The sensor is ready.'
     report = build_review(b'', result, '.docx', 'FR', 'EN-GB', 'GPT (OpenAI)',

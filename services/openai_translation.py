@@ -1,4 +1,4 @@
-"""Translate extracted body text and rebuild simple PDF/DOCX documents."""
+"""Traduire les PDF extraits et modifier le texte Word dans son document source."""
 from io import BytesIO
 import json
 import re
@@ -6,7 +6,6 @@ from xml.sax.saxutils import escape
 
 from docx import Document
 from docx.shared import Pt, Cm
-from docx.table import Table
 from openai import OpenAI
 from pypdf import PdfReader
 from reportlab.lib.pagesizes import A4
@@ -14,6 +13,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from services.translation import SOURCE_NAMES, validate_language_pair
 from services.glossary import prompt_guidance
+from services.word_documents import WordDocument
 
 TARGETS = {'EN-GB': 'British English', 'ES': 'Spanish', 'DE': 'German', 'FR': 'French'}
 MAX_TEXT = 60_000
@@ -45,21 +45,7 @@ def extract_blocks(data, suffix):
                           for paragraph in re.split(r'\n[ \t]*\n', text)
                           if paragraph.strip())
     elif suffix == '.docx':
-        doc = Document(BytesIO(data))
-        blocks = []
-        def collect(container):
-            for item in container.iter_inner_content():
-                if isinstance(item, Table):
-                    for row in item.rows:
-                        # Merged cells can refer to the same XML element.
-                        seen = set()
-                        for cell in row.cells:
-                            if cell._tc not in seen:
-                                seen.add(cell._tc)
-                                collect(cell)
-                elif item.text.strip():
-                    blocks.append(item.text.strip())
-        collect(doc)
+        blocks = WordDocument(data).blocks
     else:
         raise ValueError('Format accepté : PDF ou Word DOCX.')
     if not blocks:
@@ -117,6 +103,9 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
     validate_language_pair(source_language, language)
     if not api_key:
         raise ValueError('Configurez OPENAI_API_KEY dans le fichier .env.')
+    word = WordDocument(data) if suffix == '.docx' else None
+    if word is not None and blocks is not None and blocks != word.blocks:
+        raise ValueError('Word : les passages fournis ne correspondent pas au document source.')
     blocks = blocks if blocks is not None else extract_blocks(data, suffix)
     if not blocks or sum(map(len, blocks)) > MAX_TEXT:
         raise ValueError('Texte vide ou limite de 60 000 caractères dépassée.')
@@ -144,6 +133,14 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
             raise ValueError('OpenAI : réponse refusée ou incomplète. Aucun fichier partiel proposé ; la requête peut avoir été facturée.')
         items = parse_translations(response.output_text, identifiers)
         translated.extend(items)
+    if word is not None:
+        # Les grands passages sont découpés pour l'API puis réunis à leur place.
+        restored, position = [], 0
+        for block in blocks:
+            count = (len(block) + BATCH_SIZE - 1) // BATCH_SIZE
+            restored.append(' '.join(translated[position:position + count]))
+            position += count
+        return word.render(restored)
     return render_document(translated, suffix, language)
 
 

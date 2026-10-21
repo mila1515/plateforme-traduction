@@ -14,6 +14,7 @@ platforme/
 │   ├── files.py                   Validation des fichiers, noms de sortie, ZIP
 │   ├── translation.py             Langues, appel DeepL, messages d'erreur
 │   ├── openai_translation.py      Extraction, lots, appel GPT, reconstruction
+│   ├── word_documents.py          Réinsertion du texte dans le DOCX source
 │   ├── glossary.py                Validation du JSON, sélection, consignes, termes
 │   ├── quality.py                 Contrôles locaux des nombres, références, termes
 │   └── review.py                  Extraction après traduction et rapport traçable
@@ -48,7 +49,7 @@ flowchart TD
     O -. Si activée .-> GPT
     P --> GPT[Extraction et lots puis GPT avec termes utiles]
     P --> D[DeepL traite le document complet]
-    GPT --> F[Document traduit]
+    GPT --> F[Word source modifié ou PDF simple]
     D --> F
     F --> R[review.py extrait source et résultat]
     L -. Si activée .-> R
@@ -73,6 +74,13 @@ flowchart TD
 7. Les résultats restent en session : changer le moteur ou décocher le glossaire
    après traduction ne modifie pas le rapport du lot déjà traité et ne refait
    pas d'appel API.
+
+Pour Word, `word_documents.py` conserve l'archive source et ses propriétés.
+Le même ordre de groupes textuels est utilisé pour l'extraction et la
+réinsertion ; les longs groupes répartis sur plusieurs requêtes reviennent
+à leur emplacement d'origine. Seuls les nœuds de texte du corps, des en-têtes
+et pieds de page changent. Les tableaux et images ne sont pas reconstruits.
+Voir [les limites de conservation Word](word-translation.md).
 
 ## Tests et Docker
 

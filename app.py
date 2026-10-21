@@ -32,7 +32,7 @@ key_name = 'OPENAI_API_KEY' if provider == 'GPT (OpenAI)' else 'DEEPL_API_KEY'
 api_key = os.getenv(key_name, '').strip()
 model = os.getenv('OPENAI_MODEL', '').strip() or 'gpt-4.1-mini'
 if provider == 'GPT (OpenAI)':
-    st.info('OpenAI traduit le texte et recrée un PDF ou Word avec une mise en page simple. Les images, en-têtes, pieds de page et la présentation des tableaux ne sont pas conservés. Maximum 60 000 caractères par document.')
+    st.info('Word : le texte est traduit dans le document d’origine, en conservant les tableaux, images, en-têtes et pieds de page. Un texte plus long peut déplacer la mise en page ; les styles mélangés restent à vérifier. PDF : un nouveau document simple est créé, sans conservation des images ni de la présentation des tableaux. Maximum 60 000 caractères par document.')
     st.caption(f'Modèle : {model} · API payante à l’usage. Un document peut nécessiter plusieurs requêtes.')
 if not api_key:
     st.warning(f'La traduction nécessite une clé {provider} : renseignez {key_name} dans .env, puis redémarrez l’application.')

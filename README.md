@@ -12,6 +12,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
 | Les 50 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
+| La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
 
@@ -99,8 +100,8 @@ Pour cette première version, l'impression utilise le logiciel de l'utilisateur.
 | Langage | Python | Toute la logique dans un seul langage |
 | Interface web et serveur | Streamlit | Import, choix de langue, progression et téléchargement |
 | Traduction | API DeepL + SDK Python `deepl` | Traduire les documents complets en conservant au mieux leur mise en forme |
-| Traduction pour les essais | API OpenAI + SDK Python `openai` | Traduire le texte extrait et reconstruire un document simple |
-| Reconstruction de documents | `reportlab`, `python-docx`, `pypdf` | Lire le texte et générer les PDF ou Word avec OpenAI |
+| Traduction pour les essais | API OpenAI + SDK Python `openai` | Traduire le texte, le réinsérer dans Word ou reconstruire un PDF simple |
+| Documents | `reportlab`, `pypdf`, `lxml` | Lire les PDF, reconstruire leurs sorties et modifier le texte du Word source |
 | Configuration locale | `python-dotenv` | Charger la clé API depuis un fichier `.env` |
 | Fichiers temporaires et ZIP | Bibliothèque standard Python | `tempfile`, `pathlib` et `zipfile` |
 
@@ -130,7 +131,8 @@ platforme/
 ├── app.py                  # Interface et coordination du traitement
 ├── services/
 │   ├── translation.py      # Appels DeepL, langues et messages d'erreur
-│   ├── openai_translation.py # Extraction, OpenAI et reconstruction
+│   ├── openai_translation.py # Lots de texte, OpenAI et sortie PDF/Word
+│   ├── word_documents.py   # Texte Word modifié dans l'archive d'origine
 │   ├── files.py            # Validation, noms et ZIP
 │   ├── glossary.py         # Chargement, sélection et consignes terminologiques
 │   ├── quality.py          # Contrôles locaux : nombres, références, termes
@@ -154,7 +156,7 @@ Le projet inclut également `examples/` (trois PDF fictifs) et `tests/` (vérifi
 ### Traitement d'un lot
 
 1. Valider le nombre, le format et la taille des fichiers avant l'envoi.
-2. Pour DeepL, créer un dossier temporaire isolé par document et utiliser des noms internes uniques. Pour OpenAI, extraire et reconstruire le texte en mémoire.
+2. Pour DeepL, créer un dossier temporaire isolé par document et utiliser des noms internes uniques. Pour OpenAI, extraire le texte en mémoire ; conserver la structure source pour Word et reconstruire un document simple pour PDF.
 3. Transmettre la langue source et la langue cible choisies à chaque document. Par exemple anglais → français ou allemand → français.
 4. Traiter les fichiers l'un après l'autre : envoyer, attendre le résultat, récupérer le document traduit.
 5. Afficher un état par fichier : en attente, en cours, terminé ou en erreur.
@@ -181,7 +183,7 @@ Vérifier les langues disponibles auprès de l'API lors de l'intégration. Pour 
 - Import multiple de fichiers `.docx` et `.pdf` contenant du texte.
 - Limites applicatives proposées : 5 fichiers par lot et 5 Mo par fichier, à ajuster aux limites du compte API.
 - Traduction du document complet par DeepL, sans extraction et reconstruction manuelle des paragraphes.
-- Avec OpenAI : extraction du texte du PDF ou du corps Word et des tableaux, traduction puis reconstruction dans le format d'origine. Limite de 60 000 caractères par document, découpés en requêtes de 6 000 caractères au maximum.
+- Avec OpenAI : extraction du texte PDF, ou du corps Word, tableaux, en-têtes et pieds de page. Traduction puis réinsertion dans le Word d'origine ou création d'un PDF simple. Limite de 60 000 caractères par document, découpés en requêtes de 6 000 caractères au maximum.
 - Sortie dans le format d'origine, avec un nom comme `rapport_EN-GB.docx`.
 - Téléchargement individuel et ZIP des traductions réussies.
 - Message clair si un format, une taille ou un document ne peut pas être traité.
@@ -239,7 +241,9 @@ DEEPL_API_KEY=
 
 Vous pouvez laisser `DEEPL_API_KEY` vide pour l'instant et l'ajouter plus tard. Les deux clés sont indépendantes. OpenAI est proposé par défaut dans l'interface. Le modèle est configurable via `OPENAI_MODEL` ; il doit être accessible au compte et prendre en charge Responses et les sorties structurées. L'API OpenAI est facturée à l'usage et nécessite un crédit API utilisable.
 
-OpenAI recrée un document avec une mise en page simple : images, styles, structure visuelle des tableaux, en-têtes et pieds de page ne sont pas conservés. Les lignes du PDF sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Les fichiers Word contiennent le texte du corps et des cellules de tableau, dans leur ordre de lecture. Relire les traductions techniques avant utilisation.
+Pour Word, OpenAI traduit les textes du corps, des cellules, des en-têtes et pieds de page ; ils sont réinsérés dans le document source. Les tableaux, cellules fusionnées, images, bordures, dimensions, propriétés de sections et styles de segments sont conservés dans le fichier. Un texte plus long peut toutefois modifier les hauteurs et sauts de page. L'association des styles mélangés aux mots traduits est approximative. Les champs automatiques restent intacts et ne sont pas traduits ; le texte des images et des graphiques n'est pas traduit. Voir le [guide Word](docs/word-translation.md).
+
+Pour PDF, OpenAI recrée toujours une présentation simple sans conserver les images ni la présentation des tableaux. Les lignes sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Relire les traductions techniques avant utilisation.
 
 Les appels OpenAI utilisent `store=False`, une sortie JSON structurée et aucune relance automatique. Une réponse refusée, tronquée ou comportant un nombre incorrect de blocs n'est pas exportée. Si une requête échoue après le début du traitement, les requêtes déjà effectuées peuvent avoir consommé du crédit. Une relance manuelle retraduit le document complet.
 
@@ -254,6 +258,11 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Après conservation de la structure Word : **87 tests passent dans Docker**.
+Les contrôles Word comparent les ressources et le XML hors texte, y compris
+tableaux fusionnés/imbriqués, images, liens, sections et champs. La pagination
+exacte reste à vérifier visuellement dans Word ; aucun nouvel essai IA réel.
 
 Périmètre actuel : français, anglais, espagnol et allemand. Le glossaire est
 en version 3 avec 50 notions ; **82 tests passent dans Docker** pour les quatre

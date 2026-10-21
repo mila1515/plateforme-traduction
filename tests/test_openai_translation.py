@@ -54,7 +54,8 @@ def test_docx_body_and_tables_in_order():
     client = FakeClient(['Antes de la tabla', 'Equipo', 'Puerta 3', 'Después de la tabla'])
     result = translate_openai_document(buffer.getvalue(), '.docx', 'ES', 'fake', client=client)
     translated = Document(BytesIO(result))
-    assert [p.text for p in translated.paragraphs] == client.translations
+    assert [p.text for p in translated.paragraphs] == ['Antes de la tabla', 'Después de la tabla']
+    assert [[cell.text for cell in row.cells] for row in translated.tables[0].rows] == [['Equipo', 'Puerta 3']]
 
 
 @pytest.mark.parametrize('language,text', [

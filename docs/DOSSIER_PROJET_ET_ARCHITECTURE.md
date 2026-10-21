@@ -1,5 +1,11 @@
 # Dossier de la plateforme de traduction documentaire
 
+Évolution Word : les DOCX sont désormais traduits en remplaçant leurs textes
+dans l'archive source, avec conservation des tableaux, images et propriétés.
+Les en-têtes et pieds de page sont également traduits, hors champs automatiques.
+La pagination et l'association des styles aux mots restent à vérifier ; voir
+le [guide Word](word-translation.md). Les PDF gardent une reconstruction simple.
+
 Périmètre actuel : quatre langues (français, anglais, espagnol, allemand),
 glossaire version 3 avec 50 notions. Après adaptation, 82 tests passent dans Docker. Les
 nombres de tests mentionnés dans les étapes antérieures sont historiques.
@@ -110,7 +116,7 @@ Les PDF protégés et les PDF sans texte exploitable sont refusés. Les images s
 
 GPT est limité à 60 000 caractères extraits par document. Les requêtes sont limitées à 6 000 caractères et 40 blocs, avec au maximum 8 000 tokens de sortie par requête. Caractères et tokens sont deux unités différentes : ces limites ne garantissent pas qu'une traduction ne sera jamais tronquée.
 
-GPT recrée une présentation simple. Les images, la présentation des tableaux, les styles, les en-têtes et pieds de page ne sont pas conservés. DeepL cherche à conserver la structure documentaire, mais la fidélité réelle doit être vérifiée sur chaque famille de documents.
+Pour PDF, GPT recrée une présentation simple sans conserver les images ni la présentation des tableaux. Pour DOCX, les textes sont réinsérés dans le fichier source, y compris dans les tableaux, en-têtes et pieds de page. Les propriétés et images sont conservées, mais la pagination et les styles mélangés demandent une vérification visuelle. DeepL traite le document complet ; sa fidélité réelle doit également être vérifiée sur chaque famille de documents.
 
 ## 5. Comment les informations sont choisies
 
@@ -307,7 +313,8 @@ La revue des imports et des appels n'a identifié aucune fonction applicative in
 | SDK OpenAI | API Responses et sorties structurées | Traduction des blocs identifiés |
 | SDK DeepL | Traduction documentaire | Envoi d'un fichier complet |
 | pypdf | Lecture et contrôles PDF | Extraction du texte et inspection du document |
-| python-docx | Lecture et écriture Word | Parcours du corps, tableaux et création DOCX |
+| lxml | Modification OOXML Word | Extraction des groupes et réinsertion dans le document source |
+| python-docx | Tests Word et utilitaires | Création et inspection des documents de régression |
 | ReportLab | Création PDF | Génération de pages imprimables et caractères des langues prises en charge |
 | python-dotenv | Configuration locale | Chargement des paramètres du projet |
 | Bibliothèque standard Python | ZIP, octets et fichiers temporaires | Peu de dépendances supplémentaires |
@@ -322,7 +329,7 @@ Le meilleur fournisseur dépend du document, du contrat de traitement et des ré
 
 | Critère | GPT dans l'implémentation actuelle | DeepL dans l'implémentation actuelle |
 | --- | --- | --- |
-| Document complet | Texte extrait localement et document recréé | Fichier transmis et résultat récupéré |
+| Document complet | Texte extrait ; réinsertion Word ou reconstruction PDF simple | Fichier transmis et résultat récupéré |
 | Présentation | Simplifiée, images et styles perdus | Préservation à évaluer sur les documents réels |
 | Instructions personnalisées | Instructions de traduction configurables | Paramètres et options documentaires du fournisseur |
 | Glossaire local optionnel | Consignes par lot et contrôle après traduction | Contrôle local après traduction uniquement, sans glossaire natif transmis |
