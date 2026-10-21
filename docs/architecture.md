@@ -1,5 +1,10 @@
 # Architecture du prototype
 
+Pour distinguer validation logicielle et linguistique, lire
+[Qualité et tests](quality-and-tests.md). Les
+[recommandations entreprise](enterprise.md) décrivent une cible proposée,
+séparée des fonctions réellement implémentées ici.
+
 L'application reste un seul programme Python avec une interface Streamlit.
 Les responsabilités sont séparées sans ajouter de base de données ni de
 serveur supplémentaire. `app.py` compose les services et garde les résultats

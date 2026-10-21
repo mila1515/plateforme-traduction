@@ -13,8 +13,10 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | Les 50 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
+| Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
+| Les choix prioritaires pour un portail entreprise | [Recommandations entreprise](docs/enterprise.md) |
 
 ### Utiliser le glossaire, étape par étape
 
@@ -41,7 +43,7 @@ GPT reçoit un peu plus de contexte : aucun appel supplémentaire n'est créé,
 mais le coût du texte d'entrée peut augmenter. Mesurer l'effet avec des
 essais avant/après plutôt que promettre un gain de qualité.
 
-Pour modifier le vocabulaire, éditer le JSON en UTF-8, renseigner les cinq
+Pour modifier le vocabulaire, éditer le JSON en UTF-8, renseigner les quatre
 langues, préciser le contexte, augmenter la version et relancer les tests.
 Les étapes et conditions de validation sont dans le [guide](docs/glossary.md).
 Pour voir les changements dans l'application Docker, reconstruire avec
@@ -49,6 +51,25 @@ Pour voir les changements dans l'application Docker, reconstruire avec
 fichiers locaux, y compris le glossaire.
 
 ## Contrôle de qualité et évaluation
+
+**Trois choses distinctes :** les 87 tests utilisent de faux clients API
+(mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
+certains écarts sur les sorties ; la qualité linguistique réelle doit être
+mesurée par des essais fournisseurs et une relecture bilingue/métier.
+Un mock renvoie des traductions prédéfinies ou du texte préfixé par
+`Translated`. Il peut simuler une erreur, mais ne mesure pas le vrai moteur.
+Dans l'application, **Traduire le lot** appelle le fournisseur réel configuré.
+
+Le glossaire contient 50 notions proposées, version 3, dans quatre langues.
+Word conserve désormais sa structure source ; PDF GPT reste reconstruit
+simplement. Ni la justesse de toutes les traductions, ni la pagination exacte,
+ni un gain économique n'ont été démontrés par les tests simulés.
+Voir [l'explication complète des preuves et limites](docs/quality-and-tests.md).
+
+Pour l'entreprise, commencer par un pilote, des termes validés, une comparaison
+réelle des moteurs et un circuit de relecture. Les comptes, autorisations,
+travaux persistants, stockage privé et suivi des coûts restent à construire.
+Voir [les choix et critères de passage en entreprise](docs/enterprise.md).
 
 ### Tests dans Docker Desktop
 

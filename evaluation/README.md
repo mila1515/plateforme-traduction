@@ -1,5 +1,9 @@
 # Évaluer la qualité avant de la promettre
 
+Le [guide qualité et tests](../docs/quality-and-tests.md) distingue les mocks,
+les alertes automatiques et les essais réels. Le protocole ci-dessous prépare
+des preuves ; il ne lance pas de traduction et ne fournit pas de résultat validé.
+
 Le corpus contient 20 passages fictifs français destinés à un premier essai
 vers l'anglais britannique. Ce sont des cas de contrôle proposés, pas des
 traductions de référence approuvées ni des procédures opérationnelles.
@@ -58,13 +62,16 @@ Les tests simulés prouvent le comportement du logiciel face à des erreurs
 connues. Les contrôles locaux comparent les occurrences de nombres et les
 références majuscules du type `RN 204` ou `ST 2026 014`. La virgule décimale
 et le point sont considérés équivalents ; espaces et tirets des références
-aussi. Ils ne valident ni le sens, ni les signes, ni les unités, ni la cohérence
-du glossaire. Les nombres écrits en lettres, dates reformattées, séparateurs
+aussi. Ils ne valident ni le sens, ni les signes, ni les unités. Le contrôle
+optionnel du glossaire vérifie la présence de variantes cibles, sans certifier
+leur bon emploi. Les nombres écrits en lettres, dates reformattées, séparateurs
 de milliers ou en-têtes répétés peuvent produire des alertes légitimes.
 Une inversion de négation peut passer sans alerte : un test le démontre.
 
 Le rapport de l'application contrôle le texte extractible des fichiers, pas
-les images ou les en-têtes Word. Il n'ajoute aucun appel facturé et ne bloque
+les images ou les textes des graphiques. Les textes Word pris en charge
+incluent désormais les en-têtes et pieds de page, hors champs automatiques.
+Le contrôle n'ajoute aucun appel facturé et ne bloque
 pas le téléchargement. Tous les résultats restent des brouillons à relire.
 
 ## Preuves utiles en entretien
