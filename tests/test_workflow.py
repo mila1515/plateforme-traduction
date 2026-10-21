@@ -23,6 +23,7 @@ def test_reject_invalid_pdf():
 def test_unique_safe_output_names():
     assert output_name('../report.pdf', 'DE', 1) == '01_report_DE.pdf'
     assert output_name('report.pdf', 'DE', 2) != output_name('report.pdf', 'DE', 1)
+    assert output_name('01_report.docx', 'EN-GB', 1) == '01_report_EN-GB.docx'
     data = make_zip([('01_report_DE.pdf', b'one'), ('02_report_DE.pdf', b'two')])
     with ZipFile(BytesIO(data)) as archive:
         assert len(archive.namelist()) == 2

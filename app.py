@@ -96,36 +96,48 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
             st.session_state['result_provider'] = provider
             st.session_state['result_source'] = source_selected
 if 'results' in st.session_state:
-    st.subheader(f"Résultats du dernier lot · {st.session_state.get('result_source', 'Français')} → {st.session_state['result_language']} · {st.session_state.get('result_provider', 'DeepL')}")
+    st.subheader('Résultats')
+    st.caption(f"{st.session_state.get('result_source', 'Français')} → {st.session_state['result_language']} · {st.session_state.get('result_provider', 'DeepL')}")
+    st.caption('Traductions automatiques à relire avant utilisation.')
     successful = []
     for index, result in enumerate(st.session_state['results']):
         if result['error']:
             st.error(f"{result['name']} : {result['error']}")
         else:
             successful.append((result['name'], result['data']))
-            st.download_button(f"Télécharger {result['name']}", result['data'], result['name'], MIMES[result['suffix']], key=f'result_{index}')
-            st.caption('Brouillon automatique — traduction à relire.')
-            quality = result.get('quality')
-            if quality:
-                with st.expander(f"Contrôles · {result['name']}"):
-                    if quality['status'] == 'unavailable':
-                        st.warning(quality['limitations'])
-                    else:
-                        if quality['issues']:
-                            st.warning('Écarts détectés dans les contrôles. Vérifiez la source, la traduction et les termes attendus.')
-                            st.json(quality['issues'])
+            with st.container(border=True):
+                filename_column, download_column = st.columns([4, 1.5], vertical_alignment='center')
+                with filename_column:
+                    st.text(result['name'])
+                with download_column:
+                    st.download_button('Télécharger', result['data'], result['name'], MIMES[result['suffix']], key=f'result_{index}')
+                quality = result.get('quality')
+                if quality:
+                    alert_count = len(quality.get('issues', []))
+                    summary = ('indisponibles' if quality['status'] == 'unavailable' else
+                               f'{alert_count} alerte(s)' if alert_count else 'aucun écart détecté')
+                    with st.expander(f'Contrôles · {summary}'):
+                        if quality['status'] == 'unavailable':
+                            st.warning(quality['limitations'])
                         else:
-                            st.write('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
-                        if quality.get('glossary'):
-                            st.caption(f"Glossaire version {quality['glossary']['version']} · {quality['glossary']['status']} · "
-                                       + ('aide GPT et contrôle' if quality['glossary_usage'] == 'prompt_and_check' else 'contrôle uniquement'))
-                        st.caption(quality['limitations'])
-                    st.download_button('Télécharger le rapport de contrôle', json.dumps(quality, ensure_ascii=False, indent=2),
-                                       result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')
-    if successful:
+                            if quality['issues']:
+                                st.warning('Écarts détectés dans les contrôles. Vérifiez la source, la traduction et les termes attendus.')
+                                st.json(quality['issues'])
+                            else:
+                                st.write('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
+                            if quality.get('glossary'):
+                                st.caption(f"Glossaire version {quality['glossary']['version']} · {quality['glossary']['status']} · "
+                                           + ('aide GPT et contrôle' if quality['glossary_usage'] == 'prompt_and_check' else 'contrôle uniquement'))
+                            st.caption(quality['limitations'])
+                        st.download_button('Télécharger le rapport de contrôle', json.dumps(quality, ensure_ascii=False, indent=2),
+                                           result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')
+    if len(successful) > 1:
         st.download_button('Tout télécharger (ZIP)', make_zip(successful), 'documents_traduits.zip', 'application/zip')
-        st.info('Pour imprimer : ouvrez le document téléchargé dans votre lecteur PDF ou Word, puis utilisez Ctrl + P.')
-    st.caption('Pour relancer un échec, importez uniquement le fichier concerné et cliquez sur Traduire le lot. Une relance peut consommer à nouveau votre quota.')
+    if successful:
+        with st.expander('Aide pour imprimer'):
+            st.write('Ouvrez le document téléchargé dans Word ou un lecteur PDF, puis utilisez Ctrl + P.')
+    if any(result['error'] for result in st.session_state['results']):
+        st.caption('Pour relancer un échec, importez uniquement le fichier concerné. Une relance peut consommer à nouveau votre quota.')
     if st.button('Effacer les résultats'):
         del st.session_state['results']
         st.rerun()

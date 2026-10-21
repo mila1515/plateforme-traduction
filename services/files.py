@@ -40,7 +40,10 @@ def validate_document(name, data):
 
 def output_name(name, language, index):
     path = PurePosixPath(safe_name(name))
-    return f'{index:02d}_{path.stem}_{language}{path.suffix.lower()}'
+    prefix = f'{index:02d}_'
+    # Conserver les fichiers déjà numérotés sans produire « 01_01_rapport ».
+    stem = path.stem if path.stem.startswith(prefix) else prefix + path.stem
+    return f'{stem}_{language}{path.suffix.lower()}'
 
 
 def make_zip(files):
