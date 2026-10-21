@@ -2,6 +2,7 @@ import pytest
 import json
 from pathlib import Path
 from evaluation.run import evaluate
+from services.glossary import load_glossary
 
 
 def test_pilot_corpus_has_twenty_distinct_cases():
@@ -36,3 +37,15 @@ def test_documented_human_review_kept_separate_from_automatic_checks():
                      'reviewer': 'Bilingual reviewer', 'review_notes': 'Négation inversée.'}]})
     assert report['cases_with_alerts'] == 0
     assert report['human_decisions'] == {'rejected': 1}
+
+
+def test_optional_glossary_requires_languages_and_reports_missing_term():
+    corpus = [{'id': 'sensor', 'source': 'Le capteur est prêt.'}]
+    trial = {'results': [{'id': 'sensor', 'translation': 'The device is ready.'}]}
+    glossary = load_glossary()
+    with pytest.raises(ValueError, match='langues source et cible'):
+        evaluate(corpus, trial, glossary=glossary)
+    trial['metadata'] = {'source_language': 'FR', 'target_language': 'EN-GB'}
+    report = evaluate(corpus, trial, glossary=glossary)
+    assert report['results'][0]['control']['issues'][0]['term_id'] == 'sensor'
+    assert report['control_glossary']['sha256'] == glossary['sha256']

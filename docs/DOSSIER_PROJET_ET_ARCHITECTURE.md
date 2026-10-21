@@ -1,10 +1,19 @@
 # Dossier de la plateforme de traduction documentaire
 
+Évolution glossaire du 21 octobre 2026 : un glossaire local de démonstration
+pour les cinq langues est désormais intégré en option. Il guide GPT et
+contrôle les termes après traduction pour les deux moteurs. Tous les termes
+restent proposés, sans validation métier. Voir [l'architecture actuelle](architecture.md)
+et le [guide du glossaire](glossary.md) ; les parties entreprise ci-dessous
+restent des propositions lorsqu'elles dépassent ce périmètre. L'application
+Docker a été reconstruite avec ce glossaire ; 99 tests ont réussi dans le
+conteneur de tests, sans réseau ni appel de traduction réel.
+
 Évolution du 21 octobre 2026 sur `develop` : ajout de contrôles indicatifs des
 nombres et références après traduction, d'un rapport téléchargeable et du
 statut « brouillon à relire ». Un corpus fictif de 20 passages et un outil
 d'évaluation hors ligne sont disponibles dans `evaluation/`. La validation
-linguistique humaine, le glossaire et les autres évolutions entreprise décrites
+linguistique humaine et les autres évolutions entreprise décrites
 plus bas restent à réaliser. Vérification après ces ajouts : 63 tests réussis
 avec des fournisseurs simulés ; aucun nouvel appel de traduction réel.
 
@@ -271,7 +280,7 @@ La flèche du service GPT vers `translation.py` correspond à l'import des règl
 | `examples/` | Trois PDF fictifs utilisés par les tests, absents de l'image Docker |
 | `.gitignore` | Exclusion de `.env`, de l'environnement virtuel, des caches, de l'historique et des temporaires |
 | `README.md` | Installation, lancement et utilisation |
-| `DOSSIER_PROJET_ET_ARCHITECTURE.md` | État réalisé et propositions d'architecture |
+| `docs/DOSSIER_PROJET_ET_ARCHITECTURE.md` | État réalisé et propositions d'architecture |
 
 L'organisation est adaptée à un prototype : un seul langage principal, peu de composants et aucun stockage persistant à administrer. Elle atteint ses limites lorsque plusieurs utilisateurs doivent conserver leurs dossiers, reprendre un travail interrompu ou partager une validation.
 
@@ -312,7 +321,7 @@ Le meilleur fournisseur dépend du document, du contrat de traitement et des ré
 | Document complet | Texte extrait localement et document recréé | Fichier transmis et résultat récupéré |
 | Présentation | Simplifiée, images et styles perdus | Préservation à évaluer sur les documents réels |
 | Instructions personnalisées | Instructions de traduction configurables | Paramètres et options documentaires du fournisseur |
-| Glossaire métier | Pas de glossaire branché actuellement | Pas de glossaire branché actuellement |
+| Glossaire local optionnel | Consignes par lot et contrôle après traduction | Contrôle local après traduction uniquement, sans glossaire natif transmis |
 | Validation du résultat | Contrôles JSON, blocs présents et non vides | Succès de récupération du fichier ; pas d'évaluation linguistique locale |
 | Confidentialité | Dépend des règles de l'API et du compte | Dépend du produit et du contrat DeepL choisis |
 | Coût | Tokens d'entrée et de sortie selon le modèle | Usage documentaire selon le plan et les limites fournisseur |

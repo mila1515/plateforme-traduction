@@ -34,6 +34,17 @@ Produire le rapport sans écraser les sorties originales :
 .\.venv\Scripts\python.exe -B -m evaluation.run --trial evaluation/runs/gpt-trial.json --output evaluation/runs/gpt-report.json
 ```
 
+Pour ajouter le contrôle des termes au même essai, renseigner les langues
+source/cible dans `metadata`, puis créer un rapport distinct :
+
+```powershell
+.\.venv\Scripts\python.exe -B -m evaluation.run --trial evaluation/runs/gpt-trial.json --glossary data/glossaries/technical.json --output evaluation/runs/gpt-glossary-report.json
+```
+
+Ce paramètre contrôle une sortie existante : il ne prouve pas que le moteur
+a reçu le glossaire lors de la traduction. Consigner séparément son utilisation
+dans la configuration de l'essai. Voir le [guide du glossaire](../docs/glossary.md).
+
 Recommencer avec DeepL sur le même corpus et la même langue. Comparer les
 décisions humaines, erreurs critiques, temps de correction, coût et durée.
 Ne pas conclure qu'un moteur est meilleur à partir du seul nombre d'alertes.

@@ -1,5 +1,52 @@
 # Espace de traduction de documents
 
+## Guide rapide et documentation
+
+Le prototype traduit des PDF et Word entre français, anglais britannique,
+espagnol, allemand et chinois simplifié. Il propose un glossaire local
+optionnel et des rapports de contrôle. Tous les résultats sont des
+**brouillons à relire**. Il n'y a pas de base de données.
+
+| Pour comprendre ou modifier… | Lire ou ouvrir… |
+| --- | --- |
+| L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
+| Les 12 notions proposées dans les cinq langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
+| L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
+| Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
+| Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
+
+### Utiliser le glossaire, étape par étape
+
+1. Choisir les langues et le moteur. Ouvrir **Voir le glossaire et son utilisation**.
+2. Vérifier les termes proposés et leur contexte. Cocher **Utiliser le glossaire
+   technique** si souhaité ; l'option est désactivée par défaut.
+3. Importer les documents, accepter leur envoi au moteur et lancer le lot.
+4. Ouvrir **Contrôles** sous chaque résultat. Le rapport peut signaler un
+   nombre, une référence ou un terme attendu absent de la traduction.
+5. Télécharger le rapport JSON pour conserver le moteur, les langues, les
+   alertes et l'identifiant, version, statut et empreinte SHA-256 du glossaire.
+6. Relire le document avec une personne bilingue et compétente sur le métier.
+
+| Moteur | Aide du glossaire avant traduction | Contrôle après traduction |
+| --- | --- | --- |
+| GPT | Termes utiles et contexte ajoutés aux consignes de chaque lot | Présence des variantes cibles |
+| DeepL | Aucun glossaire natif transmis dans cette version | Même contrôle local des termes |
+
+Le fichier fourni porte le statut **proposed** : ses traductions sont des
+propositions, sans validation métier. Le contrôle n'est pas un remplacement
+automatique de mots. Des variantes grammaticales ou des paraphrases correctes
+peuvent être signalées. La présence des termes ne garantit pas le sens.
+GPT reçoit un peu plus de contexte : aucun appel supplémentaire n'est créé,
+mais le coût du texte d'entrée peut augmenter. Mesurer l'effet avec des
+essais avant/après plutôt que promettre un gain de qualité.
+
+Pour modifier le vocabulaire, éditer le JSON en UTF-8, renseigner les cinq
+langues, préciser le contexte, augmenter la version et relancer les tests.
+Les étapes et conditions de validation sont dans le [guide](docs/glossary.md).
+Pour voir les changements dans l'application Docker, reconstruire avec
+`docker compose up -d --build`. Les tests Docker lisent directement les
+fichiers locaux, y compris le glossaire.
+
 ## Contrôle de qualité et évaluation
 
 ### Tests dans Docker Desktop
@@ -19,7 +66,8 @@ Ils ne certifient pas la qualité linguistique des traductions réelles.
 Le service `traduction` conserve uniquement l'application et ses dépendances.
 
 Les résultats sont présentés comme des brouillons à relire. Après traduction,
-des contrôles locaux signalent les écarts de nombres et de références dans
+des contrôles locaux signalent les écarts de nombres, de références et, si
+le glossaire est activé, les termes cibles attendus absents dans
 le texte extractible, avec un rapport JSON téléchargeable, sans appel IA
 supplémentaire. L'absence d'alerte ne valide pas le sens de la traduction.
 Le [protocole d'évaluation](evaluation/README.md) propose un corpus fictif de
@@ -75,15 +123,25 @@ flowchart LR
     U --> I[Word ou lecteur PDF → impression]
 ```
 
-### Répartition des fichiers proposée
+### Répartition actuelle des fichiers
 
 ```text
 platforme/
 ├── app.py                  # Interface et coordination du traitement
 ├── services/
-│   ├── translation.py      # Appels à DeepL et suivi de la traduction
+│   ├── translation.py      # Appels DeepL, langues et messages d'erreur
 │   ├── openai_translation.py # Extraction, OpenAI et reconstruction
-│   └── files.py            # Validation, fichiers temporaires et ZIP
+│   ├── files.py            # Validation, noms et ZIP
+│   ├── glossary.py         # Chargement, sélection et consignes terminologiques
+│   ├── quality.py          # Contrôles locaux : nombres, références, termes
+│   └── review.py           # Rapport après traduction et traçabilité
+├── data/glossaries/        # Vocabulaire multilingue versionné en JSON
+├── docs/                  # Architecture, guide du glossaire et dossier entreprise
+├── evaluation/            # Corpus, outils et protocole de relecture humaine
+├── tests/                 # Tests unitaires et parcours Streamlit simulés
+├── examples/              # Documents fictifs destinés aux tests
+├── Dockerfile             # Images application et tests séparées
+├── compose.yaml           # Services traduction et tests dans Docker Desktop
 ├── requirements.txt        # Dépendances Python de l'application
 ├── .env.example            # Configuration des deux fournisseurs
 ├── .env                    # Clé locale, exclue de Git
@@ -194,9 +252,15 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 - `examples/rapport_incident_FR.pdf` : événement simulé, chronologie, impact et suivi.
 - `examples/processus_coordination_entreprises_FR.pdf` : échanges entre l'exploitant fictif RailNova Services et le prestataire Atelier Nord.
 
-Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image Docker.
+Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Validation du glossaire le 21 octobre 2026 : **99 tests réussis dans Docker**,
+avec fournisseurs simulés et sans accès réseau. Ils couvrent notamment les
+paires de langues du glossaire, le guidage GPT, les alertes pour les deux
+moteurs et la conservation des rapports. Ils ne valident pas la justesse
+linguistique des propositions du glossaire.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt

@@ -1,3 +1,8 @@
+"""Interface Streamlit : saisir les choix puis composer les services métier.
+
+Les documents et rapports restent en session. Le glossaire optionnel est lu
+localement ; la traduction et les contrôles sont séparés pour rester testables.
+"""
 import os
 import json
 from pathlib import Path
@@ -6,7 +11,8 @@ from dotenv import load_dotenv
 from services.files import MAX_FILES, MIMES, validate_document, output_name, make_zip
 from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document, error_message
 from services.openai_translation import extract_blocks, translate_openai_document
-from services.quality import check_translation
+from services.glossary import load_glossary, select_pairs
+from services.review import build_review
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -31,6 +37,25 @@ if provider == 'GPT (OpenAI)':
 if not api_key:
     st.warning(f'La traduction nécessite une clé {provider} : renseignez {key_name} dans .env, puis redémarrez l’application.')
 consent = st.checkbox(f'J’accepte l’envoi du contenu de ces documents à {provider} pour traduction (consommation du quota API).', key=f'consent_{provider}')
+try:
+    glossary = load_glossary()
+except ValueError as exc:
+    glossary = None
+    st.warning(str(exc))
+use_glossary = st.checkbox('Utiliser le glossaire technique', value=False, key='use_glossary', disabled=glossary is None)
+active_glossary = glossary if use_glossary and glossary is not None else None
+if active_glossary is not None and active_glossary['status'] == 'proposed':
+    st.warning('Glossaire de démonstration non validé : vérifiez les termes avec une personne bilingue et le métier.')
+if glossary is not None:
+    with st.expander('Voir le glossaire et son utilisation'):
+        status = 'proposé — à valider' if glossary['status'] == 'proposed' else 'validation déclarée'
+        st.caption(f"Version {glossary['version']} · {status}")
+        st.write(glossary['description'])
+        st.table([{'Source': pair['source_terms'][0], 'Traduction proposée': pair['target_terms'][0],
+                   'Contexte': pair['context']} for pair in select_pairs(glossary, source_language, language)])
+        st.caption('GPT : aide à la traduction et contrôle des termes. DeepL : contrôle après traduction uniquement. '
+                   'Une alerte indique un terme attendu absent ; une variante correcte peut être signalée. '
+                   'La présence du terme ne garantit pas le sens de la phrase.')
 if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_key or not consent or same_language):
     if len(uploads) > MAX_FILES:
         st.error('Importez au maximum 5 fichiers.')
@@ -55,19 +80,13 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
                 with st.spinner(f'Traduction de {name}…'):
                     try:
                         if provider == 'GPT (OpenAI)':
-                            translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks, source_language=source_language)
+                            pairs = select_pairs(active_glossary, source_language, language, '\n'.join(blocks)) if active_glossary else []
+                            translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks, source_language=source_language, glossary_pairs=pairs)
                         else:
                             translated = translate_document(data, suffix, language, api_key, source_language=source_language)
-                        # A failed check must not discard an otherwise downloadable document.
-                        try:
-                            source_text = '\n'.join(blocks if blocks is not None else extract_blocks(data, suffix))
-                            target_text = '\n'.join(extract_blocks(translated, suffix))
-                            quality = check_translation(source_text, target_text)
-                        except Exception:
-                            quality = {'status': 'unavailable', 'issues': [],
-                                       'limitations': 'Contrôle automatique indisponible : extraction impossible ou limite de texte dépassée. Relecture humaine nécessaire.'}
-                        quality.update({'provider': provider, 'model': model if provider == 'GPT (OpenAI)' else None,
-                                        'source_language': source_language, 'target_language': language})
+                        quality = build_review(data, translated, suffix, source_language, language, provider,
+                                               model=model if provider == 'GPT (OpenAI)' else None,
+                                               source_blocks=blocks, glossary=active_glossary)
                         results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix, 'error': None, 'quality': quality})
                     except Exception as exc:
                         results.append({'name': name, 'data': None, 'suffix': suffix, 'error': error_message(exc)})
@@ -93,10 +112,13 @@ if 'results' in st.session_state:
                         st.warning(quality['limitations'])
                     else:
                         if quality['issues']:
-                            st.warning('Écarts détectés sur les nombres ou références. Vérifiez la source et la traduction.')
+                            st.warning('Écarts détectés dans les contrôles. Vérifiez la source, la traduction et les termes attendus.')
                             st.json(quality['issues'])
                         else:
-                            st.write('Aucun écart détecté sur les nombres et références contrôlés. Le sens reste à vérifier.')
+                            st.write('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
+                        if quality.get('glossary'):
+                            st.caption(f"Glossaire version {quality['glossary']['version']} · {quality['glossary']['status']} · "
+                                       + ('aide GPT et contrôle' if quality['glossary_usage'] == 'prompt_and_check' else 'contrôle uniquement'))
                         st.caption(quality['limitations'])
                     st.download_button('Télécharger le rapport de contrôle', json.dumps(quality, ensure_ascii=False, indent=2),
                                        result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')

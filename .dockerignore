@@ -7,6 +7,9 @@
 !app.py
 !services/
 !services/*.py
+!data/
+!data/glossaries/
+!data/glossaries/*.json
 !.streamlit/
 !.streamlit/config.toml
 !pytest.ini

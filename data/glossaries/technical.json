@@ -1,0 +1,22 @@
+{
+  "id": "technical-demo",
+  "version": 1,
+  "status": "proposed",
+  "reviewed_by": null,
+  "reviewed_at": null,
+  "description": "Vocabulaire documentaire et technique de démonstration. Propositions à valider par des réviseurs bilingues et le métier ; aucune validation ferroviaire.",
+  "entries": [
+    {"id":"door","context":"Porte d'un équipement, au sens matériel.","terms":{"FR":["porte","portes"],"EN":["door","doors"],"ES":["puerta","puertas"],"DE":["Tür","Türen"],"ZH":["门"]}},
+    {"id":"sensor","context":"Dispositif de mesure ou de détection.","terms":{"FR":["capteur","capteurs"],"EN":["sensor","sensors"],"ES":["sensor","sensores"],"DE":["Sensor","Sensoren"],"ZH":["传感器"]}},
+    {"id":"incident-report","context":"Document décrivant un incident.","terms":{"FR":["rapport d'incident","rapport d’incident","rapports d'incident"],"EN":["incident report","incident reports"],"ES":["informe de incidente","informes de incidentes"],"DE":["Vorfallbericht","Vorfallberichte"],"ZH":["事件报告"]}},
+    {"id":"maintenance","context":"Maintenance d'un équipement, hors contexte logiciel.","terms":{"FR":["maintenance"],"EN":["maintenance"],"ES":["mantenimiento"],"DE":["Instandhaltung"],"ZH":["维护"]}},
+    {"id":"locking","context":"Mécanisme assurant la fermeture d'une porte.","terms":{"FR":["verrouillage"],"EN":["locking"],"ES":["bloqueo"],"DE":["Verriegelung"],"ZH":["锁闭"]}},
+    {"id":"mechanical-clearance","context":"Espace mécanique entre deux pièces ; ne concerne pas un jeu ludique.","terms":{"FR":["jeu mécanique"],"EN":["mechanical clearance"],"ES":["holgura mecánica"],"DE":["mechanisches Spiel"],"ZH":["机械间隙"]}},
+    {"id":"intermittent-fault","context":"Défaut qui apparaît de façon intermittente.","terms":{"FR":["défaut intermittent","défauts intermittents"],"EN":["intermittent fault","intermittent faults"],"ES":["fallo intermitente","fallos intermitentes"],"DE":["sporadischer Fehler","sporadische Fehler"],"ZH":["间歇性故障"]}},
+    {"id":"service-provider","context":"Entreprise fournissant une prestation.","terms":{"FR":["prestataire","prestataires"],"EN":["service provider","service providers"],"ES":["proveedor de servicios","proveedores de servicios"],"DE":["Dienstleister"],"ZH":["服务提供商"]}},
+    {"id":"tolerance","context":"Écart admissible sur une mesure dimensionnelle.","terms":{"FR":["tolérance","tolérances"],"EN":["tolerance","tolerances"],"ES":["tolerancia","tolerancias"],"DE":["Toleranz","Toleranzen"],"ZH":["公差"]}},
+    {"id":"temperature","context":"Grandeur physique mesurée.","terms":{"FR":["température","températures"],"EN":["temperature","temperatures"],"ES":["temperatura","temperaturas"],"DE":["Temperatur","Temperaturen"],"ZH":["温度"]}},
+    {"id":"test","context":"Essai technique réalisé sur un équipement.","terms":{"FR":["essai","essais"],"EN":["test","tests"],"ES":["ensayo","ensayos"],"DE":["Prüfung","Prüfungen"],"ZH":["试验"]}},
+    {"id":"spare-part","context":"Pièce destinée au remplacement d'une pièce d'équipement.","terms":{"FR":["pièce de rechange","pièces de rechange"],"EN":["spare part","spare parts"],"ES":["pieza de repuesto","piezas de repuesto"],"DE":["Ersatzteil","Ersatzteile"],"ZH":["备件"]}}
+  ]
+}

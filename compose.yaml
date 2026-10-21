@@ -25,3 +25,4 @@ services:
       - ./tests:/app/tests:ro
       - ./examples:/app/examples:ro
       - ./evaluation:/app/evaluation:ro
+      - ./data/glossaries:/app/data/glossaries:ro

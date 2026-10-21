@@ -1,13 +1,14 @@
 """Conservative, local checks: alerts are not a linguistic certification."""
 from collections import Counter
 import re
+from services.glossary import terminology_issues
 
 
 NUMBER = re.compile(r'\d+(?:[.,]\d+)?')
 REFERENCE = re.compile(r'\b[A-Z]{2,8}[- ]\d+(?:[- ]\d+)*\b')
 
 
-def check_translation(source, translation):
+def check_translation(source, translation, glossary_pairs=None):
     """Compare occurrences, allowing decimal commas and reference spacing.
 
     Dates, thousands separators, written-out numbers and unit conversions can
@@ -25,10 +26,15 @@ def check_translation(source, translation):
         if missing or added:
             issues.append({'category': category,
                            'missing': dict(missing), 'added': dict(added)})
+    checked = ['numbers', 'references']
+    if glossary_pairs is not None:
+        checked.append('terminology')
+        issues.extend(terminology_issues(source, translation, glossary_pairs))
     return {
         'status': 'review_required',
-        'checks': ['numbers', 'references'],
+        'checks': checked,
         'issues': issues,
-        'limitations': 'Contrôles indicatifs : sens, négations, unités et terminologie non validés. '
+        'limitations': 'Contrôles indicatifs : sens, négations et unités non validés. '
+                       'Le contrôle terminologique, si activé, vérifie la présence des termes, pas leur bon emploi. '
                        'Les changements de format peuvent produire des alertes. Relecture humaine nécessaire.',
     }
