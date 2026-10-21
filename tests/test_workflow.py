@@ -97,5 +97,8 @@ def test_batch_continues_after_service_failure(monkeypatch):
     results = app.session_state['results']
     assert results[0]['error']
     assert results[1]['data'] == sample
+    assert results[1]['quality']['status'] == 'review_required'
+    assert results[1]['quality']['issues'] == []
+    assert results[1]['quality']['provider'] == 'DeepL'
     app.run()
     assert len(calls) == 2

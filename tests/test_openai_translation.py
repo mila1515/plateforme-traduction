@@ -115,6 +115,8 @@ def test_interface_openai_works_without_deepl_and_keeps_results(monkeypatch):
     assert not app.exception
     assert app.session_state['result_provider'] == 'GPT (OpenAI)'
     assert app.session_state['results'][0]['data'] == sample
+    assert app.session_state['results'][0]['quality']['status'] == 'review_required'
+    assert app.session_state['results'][0]['quality']['issues'] == []
     assert calls[0][1]['blocks']
     app.run()
     assert len(calls) == 1

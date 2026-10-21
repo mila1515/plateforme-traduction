@@ -1,5 +1,16 @@
 # Espace de traduction de documents
 
+## Contrôle de qualité et évaluation
+
+Les résultats sont présentés comme des brouillons à relire. Après traduction,
+des contrôles locaux signalent les écarts de nombres et de références dans
+le texte extractible, avec un rapport JSON téléchargeable, sans appel IA
+supplémentaire. L'absence d'alerte ne valide pas le sens de la traduction.
+Le [protocole d'évaluation](evaluation/README.md) propose un corpus fictif de
+20 passages, un formulaire d'essai et un rapport séparant alertes automatiques
+et décisions humaines. Aucun score de qualité réelle n'a encore été mesuré
+avec ce protocole.
+
 ## Objectif
 
 Une petite application web permettant d'importer plusieurs documents, de choisir leur langue et une langue de destination, puis de récupérer les documents traduits pour les imprimer. Français, anglais, espagnol, allemand et chinois simplifié sont disponibles dans les deux sens.

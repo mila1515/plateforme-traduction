@@ -1,5 +1,13 @@
 # Dossier de la plateforme de traduction documentaire
 
+Évolution du 21 octobre 2026 sur `develop` : ajout de contrôles indicatifs des
+nombres et références après traduction, d'un rapport téléchargeable et du
+statut « brouillon à relire ». Un corpus fictif de 20 passages et un outil
+d'évaluation hors ligne sont disponibles dans `evaluation/`. La validation
+linguistique humaine, le glossaire et les autres évolutions entreprise décrites
+plus bas restent à réaliser. Vérification après ces ajouts : 63 tests réussis
+avec des fournisseurs simulés ; aucun nouvel appel de traduction réel.
+
 Document de présentation, de conception et d'évolution vers un usage en entreprise.
 
 Mise à jour : 20 octobre 2026. État décrit : prototype local Python et Streamlit, avec lancement Python et configuration Docker Compose. La dernière vérification porte sur le code et les tests ; aucun nouveau déploiement Docker ni appel réel de traduction n'a été effectué pendant le nettoyage. Les propositions d'évolution ci-dessous ne sont pas implémentées.

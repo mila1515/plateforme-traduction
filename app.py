@@ -1,10 +1,12 @@
 import os
+import json
 from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
 from services.files import MAX_FILES, MIMES, validate_document, output_name, make_zip
 from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document, error_message
 from services.openai_translation import extract_blocks, translate_openai_document
+from services.quality import check_translation
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -56,7 +58,17 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
                             translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks, source_language=source_language)
                         else:
                             translated = translate_document(data, suffix, language, api_key, source_language=source_language)
-                        results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix, 'error': None})
+                        # A failed check must not discard an otherwise downloadable document.
+                        try:
+                            source_text = '\n'.join(blocks if blocks is not None else extract_blocks(data, suffix))
+                            target_text = '\n'.join(extract_blocks(translated, suffix))
+                            quality = check_translation(source_text, target_text)
+                        except Exception:
+                            quality = {'status': 'unavailable', 'issues': [],
+                                       'limitations': 'Contrôle automatique indisponible : extraction impossible ou limite de texte dépassée. Relecture humaine nécessaire.'}
+                        quality.update({'provider': provider, 'model': model if provider == 'GPT (OpenAI)' else None,
+                                        'source_language': source_language, 'target_language': language})
+                        results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix, 'error': None, 'quality': quality})
                     except Exception as exc:
                         results.append({'name': name, 'data': None, 'suffix': suffix, 'error': error_message(exc)})
                 progress.progress(position / len(prepared))
@@ -73,6 +85,21 @@ if 'results' in st.session_state:
         else:
             successful.append((result['name'], result['data']))
             st.download_button(f"Télécharger {result['name']}", result['data'], result['name'], MIMES[result['suffix']], key=f'result_{index}')
+            st.caption('Brouillon automatique — traduction à relire.')
+            quality = result.get('quality')
+            if quality:
+                with st.expander(f"Contrôles · {result['name']}"):
+                    if quality['status'] == 'unavailable':
+                        st.warning(quality['limitations'])
+                    else:
+                        if quality['issues']:
+                            st.warning('Écarts détectés sur les nombres ou références. Vérifiez la source et la traduction.')
+                            st.json(quality['issues'])
+                        else:
+                            st.write('Aucun écart détecté sur les nombres et références contrôlés. Le sens reste à vérifier.')
+                        st.caption(quality['limitations'])
+                    st.download_button('Télécharger le rapport de contrôle', json.dumps(quality, ensure_ascii=False, indent=2),
+                                       result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')
     if successful:
         st.download_button('Tout télécharger (ZIP)', make_zip(successful), 'documents_traduits.zip', 'application/zip')
         st.info('Pour imprimer : ouvrez le document téléchargé dans votre lecteur PDF ou Word, puis utilisez Ctrl + P.')

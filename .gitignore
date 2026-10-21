@@ -5,3 +5,4 @@ __pycache__/
 .history/
 pytest-cache-files-*/
 tmp/
+evaluation/runs/
