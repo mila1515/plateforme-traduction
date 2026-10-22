@@ -1,6 +1,6 @@
 {
   "id": "technical-demo",
-  "version": 3,
+  "version": 4,
   "status": "proposed",
   "reviewed_by": null,
   "reviewed_at": null,
@@ -1068,6 +1068,136 @@
         ],
         "DE": [
           "Schmierung"
+        ]
+      }
+    },
+    {
+      "id": "lockout",
+      "context": "Mise en sécurité d'un équipement avant intervention (séparation et condamnation des énergies). Ne s'applique pas à l'enregistrement d'une information dans un registre.",
+      "terms": {
+        "FR": [
+          "consignation",
+          "consignations"
+        ],
+        "EN": [
+          "lockout",
+          "lock-out",
+          "lockouts"
+        ],
+        "ES": [
+          "consignación",
+          "consignaciones"
+        ],
+        "DE": [
+          "Freischaltung",
+          "Freischaltungen"
+        ]
+      }
+    },
+    {
+      "id": "technical-intervention",
+      "context": "Action technique sur un équipement (maintenance, réparation, réglage). Pas une présentation ni une prise de parole.",
+      "terms": {
+        "FR": [
+          "intervention",
+          "interventions"
+        ],
+        "EN": [
+          "intervention",
+          "interventions",
+          "work",
+          "maintenance work"
+        ],
+        "ES": [
+          "intervención",
+          "intervenciones"
+        ],
+        "DE": [
+          "Eingriff",
+          "Eingriffe",
+          "Arbeiten"
+        ]
+      }
+    },
+    {
+      "id": "inspection",
+      "context": "Vérification technique d'un équipement ou d'une opération. Éviter « audit » (contrôle administratif) ; « essai » a sa propre entrée. En allemand, « Prüfung » est réservé à « essai ».",
+      "terms": {
+        "FR": [
+          "contrôle",
+          "contrôles"
+        ],
+        "EN": [
+          "inspection",
+          "inspections",
+          "check",
+          "checks"
+        ],
+        "ES": [
+          "inspección",
+          "inspecciones",
+          "control",
+          "controles"
+        ],
+        "DE": [
+          "Kontrolle",
+          "Kontrollen",
+          "Inspektion",
+          "Inspektionen"
+        ]
+      }
+    },
+    {
+      "id": "taken-out-of-service",
+      "context": "Équipement ou accès rendu volontairement inutilisable dans l'attente d'une décision (porte condamnée). Pas une démolition ni une décision de justice.",
+      "terms": {
+        "FR": [
+          "condamné",
+          "condamnée",
+          "condamnés",
+          "condamnées"
+        ],
+        "EN": [
+          "taken out of service",
+          "out of service",
+          "locked out of use",
+          "sealed"
+        ],
+        "ES": [
+          "clausurado",
+          "clausurada",
+          "fuera de servicio"
+        ],
+        "DE": [
+          "gesperrt",
+          "außer Betrieb"
+        ]
+      }
+    },
+    {
+      "id": "form",
+      "context": "Document de suivi à remplir (fiche d'intervention, de contrôle). Pas une fiche technique de produit.",
+      "terms": {
+        "FR": [
+          "fiche",
+          "fiches"
+        ],
+        "EN": [
+          "form",
+          "forms",
+          "record sheet",
+          "record sheets"
+        ],
+        "ES": [
+          "ficha",
+          "fichas",
+          "formulario",
+          "formularios"
+        ],
+        "DE": [
+          "Formular",
+          "Formulare",
+          "Blatt"
         ]
       }
     }

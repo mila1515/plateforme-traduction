@@ -2,14 +2,33 @@
 
 Le [guide qualité et tests](../docs/quality-and-tests.md) distingue les mocks,
 les alertes automatiques et les essais réels. Le protocole ci-dessous prépare
-des preuves ; il ne lance pas de traduction et ne fournit pas de résultat validé.
+des preuves ; `run.py` ne lance aucune traduction, `live.py` lance un essai réel
+payant sur confirmation. Aucun des deux ne fournit de résultat validé.
 
-Le corpus contient 20 passages fictifs français destinés à un premier essai
-vers l'anglais britannique. Ce sont des cas de contrôle proposés, pas des
+Premier essai réel : voir [RESULTATS_2026-10-22.md](RESULTATS_2026-10-22.md).
+
+Le corpus contient 30 passages fictifs français destinés à un premier essai
+vers l'anglais britannique. Les cas C21 à C30 ciblent les pièges ajoutés après
+l'audit : codes et liens, milliers, négations liées à une condition,
+interdictions, « ne … que », ellipses et abréviations. Ce sont des cas de contrôle proposés, pas des
 traductions de référence approuvées ni des procédures opérationnelles.
 Le compléter avec les utilisateurs avant toute conclusion sur des documents réels.
 
-## Préparer et effectuer un essai
+## Essai réel automatisé
+
+Le script traduit tout le corpus et écrit le formulaire avec les décisions à
+`pending`. GPT passe par le service de l'application ; DeepL par son API texte
+(l'API documentaire facture au moins 50 000 caractères par fichier).
+
+```powershell
+.\.venv\Scripts\python.exe -B -m evaluation.live --engine gpt --model gpt-4.1-mini --output evaluation/runs/gpt.json --confirm
+.\.venv\Scripts\python.exe -B -m evaluation.live --engine deepl --output evaluation/runs/deepl.json --confirm
+```
+
+Le rapport de `run.py` ajoute pour chaque cas les indices par passage de
+l'application (`passage_alerts`), pour mesurer leurs vraies et fausses alertes.
+
+## Préparer et effectuer un essai manuel
 
 Depuis la racine, créer le dossier local ignoré par Git et un formulaire :
 
@@ -52,7 +71,7 @@ dans la configuration de l'essai. Voir le [guide du glossaire](../docs/glossary.
 Recommencer avec DeepL sur le même corpus et la même langue. Comparer les
 décisions humaines, erreurs critiques, temps de correction, coût et durée.
 Ne pas conclure qu'un moteur est meilleur à partir du seul nombre d'alertes.
-Ces 20 passages ne suffisent pas à garantir toutes les langues ou les PDF longs.
+Ces 30 passages ne suffisent pas à garantir toutes les langues ou les PDF longs.
 Pour comparer les rendus PDF/Word, vérifier séparément tableaux, ordre de
 lecture et caractères dans les fichiers exportés.
 
@@ -80,7 +99,8 @@ Présenter un cas source, une sortie réelle erronée, l'analyse du réviseur,
 la correction apportée et le résultat d'un nouvel essai. Conserver des cas
 nouveaux pour vérifier que l'amélioration se généralise. Annoncer le nombre
 de cas relus et rejetés, avec le périmètre exact, plutôt qu'un « taux de
-fiabilité » universel. Aucun résultat réel n'est fourni dans ce dossier.
+fiabilité » universel. Le premier essai réel est résumé dans
+[RESULTATS_2026-10-22.md](RESULTATS_2026-10-22.md) ; ses décisions humaines restent à renseigner.
 
 Mesurer l'intérêt économique avec le temps total : traduction, contrôle,
 corrections et reprises. Comparer à la méthode habituelle de l'utilisateur.

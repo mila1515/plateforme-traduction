@@ -17,6 +17,7 @@ from services.openai_translation import extract_blocks, translate_openai_documen
 from services.glossary import load_glossary, select_pairs
 from services.review import build_review, readable_alerts
 from services.semantic_review import review_meaning, fingerprint, MAX_REVIEW_TEXT
+from services.ambiguity import find_ambiguities, DEFAULT_MODEL as AMBIGUITY_MODEL
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -27,6 +28,8 @@ log = logging.getLogger('app')
 EXPECTED_ERRORS = (ValueError, openai.APIError, deepl.DeepLException)
 
 GPT = 'GPT (OpenAI)'
+BRIEF_TONES = {'Automatique': None, 'Formel (vouvoiement)': 'formal', 'Courant': 'informal'}
+DEEPL_FORMALITY = {'formal': 'prefer_more', 'informal': 'prefer_less'}
 SEVERITIES = {'critical': 'critique', 'major': 'majeur', 'minor': 'mineur'}
 
 
@@ -52,21 +55,41 @@ def prepare_batch(uploads, provider):
     return prepared, issues
 
 
-def translate_one(data, suffix, blocks, provider, source_language, language, api_key, model, glossary):
-    """Traduire un document puis construire son rapport et sa comparaison."""
+def translate_one(data, suffix, blocks, provider, source_language, language, api_key, model, glossary, brief,
+                  ambiguity_model=None):
+    """Traduire un document puis construire son rapport et sa comparaison.
+
+    Avec ``ambiguity_model``, un appel OpenAI séparé repère les ambiguïtés du
+    texte source ; son échec n'empêche jamais de livrer la traduction.
+    """
     passages = []  # Paires alignées (GPT uniquement) pour les contrôles passage par passage.
     if provider == GPT:
         pairs = select_pairs(glossary, source_language, language, '\n'.join(blocks)) if glossary else []
         translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks,
                                                source_language=source_language, glossary_pairs=pairs,
                                                cache=st.session_state.setdefault('translation_cache', {}),
-                                               passages=passages)
+                                               passages=passages, brief=brief)
     else:
-        translated = translate_document(data, suffix, language, api_key, source_language=source_language)
+        translated = translate_document(data, suffix, language, api_key, source_language=source_language,
+                                        formality=DEEPL_FORMALITY.get(brief['tone']))
+    doubts, ambiguity_error = [], None
+    if ambiguity_model:
+        try:
+            source_blocks = blocks if blocks is not None else extract_blocks(data, suffix, None)
+            doubts = find_ambiguities(source_blocks, source_language, os.getenv('OPENAI_API_KEY', '').strip(),
+                                      model=ambiguity_model)
+        except Exception as exc:
+            log_failure('Analyse des ambiguïtés', exc)
+            ambiguity_error = error_message(exc)
     comparison = {}
     quality = build_review(data, translated, suffix, source_language, language, provider,
                            model=model if provider == GPT else None,
-                           source_blocks=blocks, glossary=glossary, comparison=comparison, passages=passages)
+                           source_blocks=blocks, glossary=glossary, comparison=comparison, passages=passages,
+                           doubts=doubts)
+    if brief['description'] or brief['tone']:
+        quality['brief'] = brief  # Traçabilité : texte saisi par l'utilisateur, pas le document.
+    if ambiguity_model:
+        quality['ambiguity'] = {'model': ambiguity_model, 'found': len(doubts), 'error': ambiguity_error}
     return translated, quality, comparison
 
 
@@ -147,6 +170,11 @@ def render_comparison(result, index, model):
             st.caption('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
     for notice in (quality or {}).get('untranslated_parts', []):
         st.info(notice)
+    ambiguity = (quality or {}).get('ambiguity')
+    if ambiguity and ambiguity['error']:
+        st.info('Analyse des ambiguïtés indisponible : ' + ambiguity['error'])
+    elif ambiguity and not ambiguity['found']:
+        st.caption(f"Aucune ambiguïté repérée dans l’original ({ambiguity['model']}). Cela ne valide pas le sens.")
 
 
 def render_quality_details(result, index, quality):
@@ -204,6 +232,15 @@ else:
 if not api_key:
     st.warning(f'La traduction nécessite une clé {provider} : renseignez {key_name} dans .env, puis redémarrez l’application.')
 consent = st.checkbox(f'J’accepte l’envoi du contenu de ces documents à {provider} pour traduction (consommation du quota API).', key=f'consent_{provider}')
+with st.expander('Contexte du document (facultatif)'):
+    brief_description = st.text_area(
+        'Décrivez le document', max_chars=500, key='brief_description',
+        placeholder='Ex. : procédure de maintenance ferroviaire pour des techniciens. '
+                    '« contrôle » = inspection ; « consignation » = lockout.')
+    brief_tone = st.selectbox('Ton de la traduction', list(BRIEF_TONES), key='brief_tone')
+    st.caption('GPT : description et ton ajoutés aux consignes, sans priorité sur la fidélité du sens. '
+               'DeepL : seul le ton est utilisé (vouvoiement en allemand, espagnol et français).')
+brief = {'description': brief_description.strip(), 'tone': BRIEF_TONES[brief_tone]}
 try:
     glossary = load_glossary()
 except ValueError as exc:
@@ -211,6 +248,14 @@ except ValueError as exc:
     st.warning(str(exc))
 use_glossary = st.checkbox('Utiliser le glossaire technique', value=False, key='use_glossary', disabled=glossary is None)
 active_glossary = glossary if use_glossary and glossary is not None else None
+ambiguity_model = os.getenv('OPENAI_AMBIGUITY_MODEL', '').strip() or AMBIGUITY_MODEL
+openai_key = bool(os.getenv('OPENAI_API_KEY', '').strip())
+find_doubts = st.checkbox(
+    f'Repérer les ambiguïtés de l’original (j’accepte l’envoi du texte source à OpenAI, {ambiguity_model}, '
+    'appel supplémentaire payant)', value=False, key='find_ambiguities', disabled=not openai_key)
+st.caption('Signale les phrases à double sens (pronom, portée d’une négation ou d’une condition, terme à deux sens) '
+           'que la traduction a dû trancher. Fonctionne aussi avec DeepL.'
+           + ('' if openai_key else ' Nécessite OPENAI_API_KEY dans .env.'))
 if active_glossary is not None and active_glossary['status'] == 'proposed':
     st.warning('Glossaire de démonstration non validé : vérifiez les termes avec une personne bilingue et le métier.')
 if glossary is not None:
@@ -234,7 +279,8 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
             with st.spinner(f'Traduction de {name}…'):
                 try:
                     translated, quality, comparison = translate_one(data, suffix, blocks, provider, source_language,
-                                                                    language, api_key, model, active_glossary)
+                                                                    language, api_key, model, active_glossary, brief,
+                                                                    ambiguity_model if find_doubts else None)
                     results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix,
                                     'error': None, 'quality': quality, 'comparison': comparison})
                 except Exception as exc:

@@ -19,17 +19,23 @@ platforme/
 │   ├── files.py                   Validation des fichiers, noms de sortie, ZIP
 │   ├── translation.py             Langues, appel DeepL, messages d'erreur
 │   ├── openai_translation.py      Extraction, lots, appel GPT, reconstruction
-│   ├── word_documents.py          Réinsertion du texte dans le DOCX source
+│   ├── word_documents.py          Paragraphes Word balisés et réinsertion dans le DOCX source
+│   ├── pdf_text.py                Paragraphes PDF : sauts de page, césures, en-têtes
+│   ├── protection.py              Codes, références, liens et e-mails protégés par jetons
 │   ├── glossary.py                Validation du JSON, sélection, consignes, termes
 │   ├── quality.py                 Contrôles locaux des nombres, références, termes
-│   └── review.py                  Extraction après traduction et rapport traçable
+│   ├── passages.py                Contrôles passage par passage (négation, obligation…)
+│   ├── review.py                  Extraction après traduction et rapport traçable
+│   ├── ambiguity.py               Repérage facultatif des ambiguïtés de l'original
 │   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés
 ├── evaluation/
-│   ├── corpus.json                20 passages fictifs pour une évaluation humaine
+│   ├── corpus.json                30 passages fictifs pour une évaluation humaine
 │   ├── run.py                     Préparation et bilan d'un essai, sans API
+│   ├── live.py                    Essai réel payant (GPT ou DeepL), sur --confirm
+│   ├── RESULTATS_2026-10-22.md    Synthèse du premier essai réel
 │   ├── README.md                  Protocole d'évaluation linguistique
 │   └── runs/                      Essais locaux, ignorés par Git
 ├── examples/                      Trois PDF fictifs pour les tests
@@ -95,7 +101,7 @@ consentement distinct à l'envoi à OpenAI. Cet appel supplémentaire n'est pas
 automatique et ne change pas le document ; son résultat reste séparé du rapport
 local. Voir [le contrat de l'analyse du sens](semantic-review.md).
 
-La traduction GPT elle-même utilise les consignes `meaning-v2`, un découpage
+La traduction GPT elle-même utilise les consignes `meaning-v5`, un découpage
 privilégiant les fins de phrase et du contexte source voisin limité. Le plan
 des fragments conserve leur emplacement d'origine. Aucune recherche vectorielle
 n'intervient ; voir [sens, chunks et vecteurs](translation-context.md).

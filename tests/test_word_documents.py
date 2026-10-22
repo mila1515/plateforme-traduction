@@ -114,9 +114,12 @@ def test_vertical_merge_not_translated_twice_and_breaks_are_retained():
     paragraph = document.add_paragraph()
     paragraph.add_run('Avant\tAprès\nSuite')
     source = save(document)
-    assert extract_blocks(source, '.docx') == ['Texte fusionné', 'Avant', 'Après', 'Suite']
-    result = translate_openai_document(source, '.docx', 'DE', 'fake', client=Client())
-    assert Document(BytesIO(result)).paragraphs[0].text == 'Translated Avant\tTranslated Après\nTranslated Suite'
+    # Un seul passage : la phrase n'est plus coupée aux tabulations et sauts de ligne.
+    assert extract_blocks(source, '.docx') == ['Texte fusionné', 'Avant\tAprès\nSuite']
+    client = Client()
+    result = translate_openai_document(source, '.docx', 'DE', 'fake', client=client)
+    assert 'Avant⟪1/⟫Après⟪2/⟫Suite' in client.calls[0]['input']
+    assert Document(BytesIO(result)).paragraphs[0].text == 'Translated Avant\tAprès\nSuite'
 
 
 def test_long_word_paragraph_returns_to_original_cell():
@@ -208,30 +211,102 @@ def test_footnotes_and_endnotes_are_translated_with_the_body():
     assert WordDocument(source).untranslated == []
 
 
-def test_field_results_and_comments_are_reported_as_untranslated():
-    from services.review import build_review
-    document = Document()
-    run = document.add_paragraph('Voir ').add_run()
-    for kind, text in (('begin', None), (None, ' HYPERLINK "https://example.org" '), ('separate', None)):
+def add_field(paragraph, instruction, result):
+    """Champ complexe : début, instruction, séparation, texte affiché, fin."""
+    run = paragraph.add_run()
+    for kind, text in (('begin', None), (None, instruction), ('separate', None)):
         element = OxmlElement('w:fldChar' if kind else 'w:instrText')
         if kind:
             element.set(qn('w:fldCharType'), kind)
         else:
             element.text = text
         run._r.append(element)
-    result_text = OxmlElement('w:t')
-    result_text.text = 'le site officiel'
-    run._r.append(result_text)
+    shown = OxmlElement('w:t')
+    shown.text = result
+    run._r.append(shown)
     end = OxmlElement('w:fldChar')
     end.set(qn('w:fldCharType'), 'end')
     run._r.append(end)
+
+
+def test_field_results_and_comments_are_reported_as_untranslated():
+    from services.review import build_review
+    document = Document()
+    paragraph = document.add_paragraph('Voir la section ')
+    add_field(paragraph, ' REF _Ref123 \\h ', 'Sécurité')
     source = with_parts(save(document), {'word/comments.xml':
         '<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
         '<w:comment w:id="0"><w:p><w:r><w:t>À vérifier</w:t></w:r></w:p></w:comment></w:comments>'})
     word = WordDocument(source)
-    assert 'le site officiel' not in word.blocks
+    assert word.blocks == ['Voir la section ']
+    assert word.tagged == ['Voir la section ⟪1/⟫']  # Le renvoi reste dynamique, à sa place.
     assert len(word.untranslated) == 2
     report = build_review(source, source, '.docx', 'FR', 'EN-GB', 'GPT (OpenAI)')
     assert report['untranslated_parts'] == word.untranslated
     # DeepL traduit lui-même le fichier Word : pas d'avertissement inventé.
     assert build_review(source, source, '.docx', 'FR', 'EN-GB', 'DeepL')['untranslated_parts'] == []
+
+
+def test_sentence_around_link_and_line_break_is_sent_whole_and_link_text_translated():
+    document = Document()
+    paragraph = document.add_paragraph('Contactez le service ')
+    add_field(paragraph, ' HYPERLINK "https://example.org" ', 'via le portail')
+    paragraph.add_run(' avant de couper le courant.')
+    second = document.add_paragraph('Ne pas redémarrer')
+    second.add_run().add_break()
+    second.add_run('sans autorisation écrite.')
+    word = WordDocument(save(document))
+    assert word.tagged == ['Contactez le service ⟪1⟫via le portail⟪/1⟫ avant de couper le courant.',
+                           'Ne pas redémarrer⟪1/⟫sans autorisation écrite.']
+    assert word.untranslated == []
+    result = Document(BytesIO(word.render([
+        'Contact the department ⟪1⟫through the portal⟪/1⟫ before cutting the power.',
+        'Do not restart⟪1/⟫ without written authorisation.'])))  # Espace réelle de gpt-4.1-mini, retirée.
+    assert result.paragraphs[0].text == 'Contact the department through the portal before cutting the power.'
+    assert result.paragraphs[1].text == 'Do not restart\nwithout written authorisation.'
+    assert word.approximate == 0
+
+
+def test_formatting_follows_the_translated_words_even_when_word_order_changes():
+    document = Document()
+    paragraph = document.add_paragraph('Appuyer sur le bouton ')
+    paragraph.add_run('rouge').bold = True
+    paragraph.add_run(' du panneau.')
+    word = WordDocument(save(document))
+    assert word.tagged == ['Appuyer sur le bouton ⟪1⟫rouge⟪/1⟫ du panneau.']
+    # En anglais, l'adjectif passe avant le nom : le gras suit « red ».
+    result = Document(BytesIO(word.render(['Press the ⟪1⟫red⟪/1⟫ button on the panel.'])))
+    runs = result.paragraphs[0].runs
+    assert [(run.text, bool(run.bold)) for run in runs] == [
+        ('Press the ', False), ('red', True), (' button on the panel.', False)]
+
+
+@pytest.mark.parametrize('translation', ['Press the red button on the panel.', 'Press ⟪1⟫the ⟪1⟫red⟪/1⟫ button.',
+                                         'Press the ⟪2⟫red⟪/2⟫ button.'])
+def test_lost_or_altered_tags_keep_the_whole_paragraph_translated(translation):
+    document = Document()
+    paragraph = document.add_paragraph('Appuyer sur le bouton ')
+    paragraph.add_run('rouge').bold = True
+    paragraph.add_run(' du panneau.')
+    word = WordDocument(save(document))
+    result = Document(BytesIO(word.render([translation])))
+    text = result.paragraphs[0].text
+    assert '⟪' not in text and 'red' in text and 'Appuyer' not in text
+    assert word.approximate == 1
+
+
+def test_plain_text_for_checks_has_no_markup():
+    from services.word_documents import strip_tags
+    assert strip_tags('Do not restart⟪1/⟫without ⟪2⟫written⟪/2⟫ authorisation.') == \
+        'Do not restart without written authorisation.'
+
+
+def test_invisible_run_properties_do_not_create_tags():
+    document = Document()
+    paragraph = document.add_paragraph()
+    for text, language in (('Contrôle ', 'fr-FR'), ('du capteur', 'en-GB')):
+        run = paragraph.add_run(text)
+        lang = OxmlElement('w:lang')
+        lang.set(qn('w:val'), language)
+        run._r.get_or_add_rPr().append(lang)
+    assert WordDocument(save(document)).tagged == ['Contrôle du capteur']

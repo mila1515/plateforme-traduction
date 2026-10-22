@@ -5,9 +5,9 @@ from evaluation.run import evaluate
 from services.glossary import load_glossary
 
 
-def test_pilot_corpus_has_twenty_distinct_cases():
+def test_pilot_corpus_has_thirty_distinct_cases():
     corpus = json.loads((Path(__file__).resolve().parents[1] / 'evaluation' / 'corpus.json').read_text(encoding='utf-8'))
-    assert len(corpus) == len({case['id'] for case in corpus}) == 20
+    assert len(corpus) == len({case['id'] for case in corpus}) == 30
     assert all(case['source'].strip() and case['focus'].strip() for case in corpus)
 
 

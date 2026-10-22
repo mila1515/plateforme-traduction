@@ -10,7 +10,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | Pour comprendre ou modifier… | Lire ou ouvrir… |
 | --- | --- |
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
-| Les 50 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
+| Les 55 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 167 tests utilisent de faux clients API
+**Trois choses distinctes :** les 198 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -77,7 +77,14 @@ Un mock renvoie des traductions prédéfinies ou du texte préfixé par
 `Translated`. Il peut simuler une erreur, mais ne mesure pas le vrai moteur.
 Dans l'application, **Traduire le lot** appelle le fournisseur réel configuré.
 
-Le glossaire contient 50 notions proposées, version 3, dans quatre langues.
+Le glossaire contient 55 notions proposées, version 4, dans quatre langues. Les
+5 dernières (consignation, intervention, contrôle, condamné, fiche) viennent des
+erreurs de l'essai réel ; le contrôle terminologique repère désormais les erreurs
+de vocabulaire de DeepL sans appel IA.
+
+Deux options facultatives aident la traduction : une **fiche de contexte**
+(domaine, public, ton) et le **repérage des ambiguïtés de l'original** (appel
+OpenAI séparé). Voir [Ambiguïtés et fiche de contexte](docs/ambiguity-and-brief.md).
 Word conserve désormais sa structure source ; PDF GPT reste reconstruit
 simplement. Ni la justesse de toutes les traductions, ni la pagination exacte,
 ni un gain économique n'ont été démontrés par les tests simulés.
@@ -110,9 +117,10 @@ le glossaire est activé, les termes cibles attendus absents dans
 le texte extractible, avec un rapport JSON téléchargeable, sans appel IA
 supplémentaire. L'absence d'alerte ne valide pas le sens de la traduction.
 Le [protocole d'évaluation](evaluation/README.md) propose un corpus fictif de
-20 passages, un formulaire d'essai et un rapport séparant alertes automatiques
-et décisions humaines. Aucun score de qualité réelle n'a encore été mesuré
-avec ce protocole.
+30 passages, un formulaire d'essai et un rapport séparant alertes automatiques
+et décisions humaines. Un premier essai réel (GPT et DeepL) est résumé dans
+[les résultats du 22 octobre 2026](evaluation/RESULTATS_2026-10-22.md) ;
+la relecture humaine reste à faire.
 
 ## Objectif
 
@@ -289,7 +297,7 @@ DEEPL_API_KEY=
 
 Vous pouvez laisser `DEEPL_API_KEY` vide pour l'instant et l'ajouter plus tard. Les deux clés sont indépendantes. OpenAI est proposé par défaut dans l'interface. Le modèle est configurable via `OPENAI_MODEL` ; il doit être accessible au compte et prendre en charge Responses et les sorties structurées. L'API OpenAI est facturée à l'usage et nécessite un crédit API utilisable.
 
-Pour Word, OpenAI traduit les textes du corps, des cellules, des en-têtes, pieds de page et notes (bas de page et fin) ; ils sont réinsérés dans le document source. Les tableaux, cellules fusionnées, images, bordures, dimensions, propriétés de sections et styles de segments sont conservés dans le fichier. Un texte plus long peut toutefois modifier les hauteurs et sauts de page. L'association des styles mélangés aux mots traduits est approximative. Les champs automatiques et commentaires restent intacts et ne sont pas traduits ; l'interface le signale ; le texte des images et des graphiques n'est pas traduit. Voir le [guide Word](docs/word-translation.md).
+Pour Word, OpenAI traduit chaque paragraphe en entier (corps, cellules, en-têtes, pieds de page et notes), avec des balises qui replacent le gras, l'italique et les liens sur les mots traduits ; ils sont réinsérés dans le document source. Les tableaux, cellules fusionnées, images, bordures, dimensions, propriétés de sections et styles de segments sont conservés dans le fichier. Un texte plus long peut toutefois modifier les hauteurs et sauts de page. L'association des styles mélangés aux mots traduits est approximative. Les champs automatiques et commentaires restent intacts et ne sont pas traduits ; l'interface le signale ; le texte des images et des graphiques n'est pas traduit. Voir le [guide Word](docs/word-translation.md).
 
 Pour PDF, OpenAI recrée toujours une présentation simple sans conserver les images ni la présentation des tableaux. Les lignes sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Relire les traductions techniques avant utilisation.
 
@@ -307,8 +315,16 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **167 tests réussis avec Python local**, après
-le nettoyage des PDF (sauts de page, césures, en-têtes), la protection des codes
+Vérification du 22 octobre 2026 : **198 tests réussis avec Python local**, après
+ajout de la fiche de contexte, du repérage des ambiguïtés et de 5 notions au
+glossaire (version 4).
+
+Vérification précédente : **181 tests**, après
+le premier essai réel (corpus de 30 cas, [résultats](evaluation/RESULTATS_2026-10-22.md))
+et la traduction des paragraphes Word entiers avec balises de mise en forme
+([guide Word](docs/word-translation.md)).
+
+Vérification précédente : **167 tests**, après le nettoyage des PDF (sauts de page, césures, en-têtes), la protection des codes
 et liens, et les contrôles passage par passage. Voir
 [Sens, chunks et vecteurs](docs/translation-context.md).
 

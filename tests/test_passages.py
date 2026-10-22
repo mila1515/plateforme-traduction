@@ -77,3 +77,31 @@ def test_gpt_translation_exposes_aligned_passages_to_the_report():
     report = build_review(b'', result, '.pdf', 'FR', 'EN-GB', 'GPT (OpenAI)', source_blocks=blocks, passages=passages)
     assert 'passages' in report['checks']
     assert {(issue['passage'], issue['check']) for issue in report['issues']} == {(1, 'numbers'), (2, 'negation')}
+
+
+# Sorties réelles de l'essai du 22 octobre 2026 (gpt-4.1-mini, gpt-5.4-mini, DeepL) :
+# ces alertes étaient fausses, elles ne doivent plus revenir.
+@pytest.mark.parametrize('source,translation', [
+    ('La hausse est de 15 %, et non de 50 %.', 'The increase is 15 per cent, not 50 per cent.'),
+    ('Le capteur A a été remplacé ; le B, non.', 'Sensor A was replaced; B was not.'),
+    ("La porte ne peut être ouverte que si le train est arrêté et que la maintenance a validé l'intervention.",
+     'The door may only be opened if the train is stopped and maintenance has approved the intervention.'),
+    ("Le devis s'élève à 1 500,50 EUR pour 3 000 pièces.", 'The quotation comes to EUR 1,500.50 for 3,000 pieces.'),
+    ('Aucune intervention ne doit être réalisée sans consignation préalable.',
+     'No intervention is to be carried out without prior lock-out.'),
+    ('Équipement : porte 3. État : non conforme.', 'Equipment: door 3. Status: non-compliant.'),
+    # Essai avec glossaire : interdiction en « No … may » et absence d'obligation en « need not ».
+    ('Aucune intervention ne doit être réalisée sans consignation préalable.',
+     'No intervention may be carried out without prior lockout.'),
+    ("L'opérateur peut, mais ne doit pas, prolonger l'essai au-delà de 30 minutes.",
+     'The operator may, but need not, extend the test beyond 30 minutes.'),
+])
+def test_real_trial_false_alerts_are_gone(source, translation):
+    assert checks(source, translation) == []
+
+
+def test_restrictive_ne_que_keeps_a_real_negation_and_weakened_prohibition_is_reported():
+    assert ('negation', 'missing') in checks("Il ne reste pas que deux portes.", 'Only two doors remain.')
+    # Sortie réelle : « ne doit » devenu « should » affaiblit l'interdiction.
+    assert ('obligation', 'missing') in checks('Aucune intervention ne doit être réalisée sans consignation préalable.',
+                                               'No intervention should be carried out without prior lockout.')

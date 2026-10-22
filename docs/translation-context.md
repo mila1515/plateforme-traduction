@@ -2,7 +2,8 @@
 
 Le moteur GPT ne reçoit pas une liste de mots à remplacer. Il traduit des
 passages, avec une consigne explicite de fidélité au sens et de formulation
-naturelle dans la langue cible. La version des consignes est `meaning-v3`,
+naturelle dans la langue cible. La version des consignes est `meaning-v5`
+(fiche de contexte facultative, voir [ambiguïtés et fiche](ambiguity-and-brief.md)),
 enregistrée dans le rapport local des traductions GPT.
 
 ## Ce qui est demandé au moteur

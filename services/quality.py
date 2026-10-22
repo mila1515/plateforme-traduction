@@ -6,7 +6,8 @@ from services.glossary import terminology_issues
 
 # Groupes de milliers (« 1 500 », « 1,500 », « 1.500.000 ») avant les nombres simples.
 NUMBER = re.compile(r'(?<![\d.,])\d{1,3}(?:[   .,]\d{3}(?!\d))+(?:[.,]\d+)?|\d+(?:[.,]\d+)?')
-REFERENCE = re.compile(r'\b[A-Z]{2,8}[- ]\d+(?:[- ]\d+)*\b')
+# Un code monnaie suivi d'un montant (« EUR 1,500.50 ») n'est pas une référence.
+REFERENCE = re.compile(r'\b(?!(?:EUR|USD|GBP|CHF|JPY|CAD|AUD)\b)[A-Z]{2,8}[- ]\d+(?:[- ]\d+)*\b')
 
 
 def normalize_number(value):

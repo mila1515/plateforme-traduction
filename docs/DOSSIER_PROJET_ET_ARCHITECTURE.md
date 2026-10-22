@@ -1,7 +1,8 @@
 # Dossier de la plateforme de traduction documentaire
 
 Lecture actuelle : 87 tests simulés réussis après conservation Word, quatre
-langues et glossaire de 50 notions proposées (version 3). Ce dossier conserve
+langues et glossaire de 50 notions proposées (version 3 ; 55 notions en version 4
+depuis le 22 octobre 2026). Ce dossier conserve
 des états antérieurs et des conceptions non implémentées. Les synthèses à jour
 sont [Qualité et tests](quality-and-tests.md),
 [Architecture actuelle](architecture.md) et [Choix entreprise](enterprise.md).

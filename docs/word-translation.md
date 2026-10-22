@@ -11,12 +11,18 @@ elle extrait le texte et reconstruit un document simple.
    imbriqués, les en-têtes et pieds de page, les notes de bas de page et
    les notes de fin. Les cellules fusionnées
    ne sont pas dupliquées ; un en-tête partagé n'est traduit qu'une fois.
-3. Regrouper le texte entre les tabulations, sauts et objets conservés. Ne
-   pas traduire les codes et résultats des champs automatiques comme PAGE.
-4. Traduire les groupes dans les limites habituelles. Rejeter les réponses
-   structurellement incomplètes. Réunir les morceaux des groupes longs.
-5. Répartir les traductions dans les nœuds de texte existants, sans supprimer
-   les propriétés des paragraphes, cellules, images, liens ou sections.
+3. Envoyer chaque paragraphe **en entier**. Le texte dont la mise en forme
+   diffère du reste du paragraphe (gras, italique, lien) est balisé
+   `⟪1⟫…⟪/1⟫` ; tabulations, sauts de ligne, images et champs deviennent des
+   marqueurs `⟪2/⟫`. Le texte affiché des liens hypertextes est traduit ; les
+   autres champs (PAGE, sommaire, renvois) restent dynamiques et intacts.
+4. Traduire les paragraphes dans les limites habituelles. Rejeter les réponses
+   structurellement incomplètes. Réunir les morceaux des paragraphes longs.
+5. Replacer chaque passage balisé dans ses nœuds d'origine : la mise en forme
+   suit les mots traduits, même si leur ordre change (« bouton **rouge** » →
+   « **red** button »). Si le modèle perd, ajoute ou déplace une balise, le
+   paragraphe reste traduit en entier mais sa mise en forme est répartie
+   proportionnellement ; ces cas sont comptés dans le journal.
 6. Recopier les autres fichiers de l'archive à l'identique, puis proposer
    le DOCX et le rapport de contrôle habituel.
 
@@ -29,17 +35,24 @@ de leur contenu. Aucun appel de mise en page ou de correction supplémentaire.
 Les tableaux, bordures, largeurs, fusions, images et propriétés de sections
 restent dans le fichier source. Les tabulations et sauts explicites sont
 conservés. Les fichiers de styles, médias et relations restent identiques.
-Les champs restent dynamiques, avec leur contenu d'origine.
+Les champs autres que les liens restent dynamiques, avec leur contenu d'origine.
+Les propriétés invisibles (langue de correction, « pas de vérification ») ne
+créent pas de balise.
 
 La pagination exacte n'est pas garantie : une traduction plus longue peut
 agrandir des cellules, déplacer des pages ou déborder d'une zone de taille
-fixe. Les styles de segments sont conservés, mais le texte est réparti
-proportionnellement : une mise en gras peut ne plus correspondre au même
-mot. Les liens gardent leur destination ; vérifier leur libellé traduit.
+fixe. Un mot composé allemand peut porter une mise en forme partielle
+(« _Haupt_-Panel »). Les liens gardent leur destination ; vérifier leur
+libellé traduit.
+
+Mesure réelle du 22 octobre 2026 (document de test, anglais et allemand) :
+`gpt-4.1-mini` a rendu toutes les balises (0 paragraphe raté sur 36) ;
+`gpt-5.4-mini` en a raté 13 sur 36, dont un essai entier. Le repli garde ces
+paragraphes traduits, mais avec une mise en forme approximative.
 
 Le texte des commentaires, graphiques, SmartArt et objets embarqués n'est pas
 pris en charge par ce parcours. Lorsque le document contient des commentaires
-ou du texte affiché par des champs (sommaire, liens, renvois), le rapport de
+ou du texte affiché par des champs (sommaire, renvois), le rapport de
 contrôle l'indique dans `untranslated_parts` et l'interface l'affiche sous
 **Comparer les textes**. Les
 éléments conservés peuvent donc encore contenir du texte dans la langue
