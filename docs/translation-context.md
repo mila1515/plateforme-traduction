@@ -2,7 +2,7 @@
 
 Le moteur GPT ne reçoit pas une liste de mots à remplacer. Il traduit des
 passages, avec une consigne explicite de fidélité au sens et de formulation
-naturelle dans la langue cible. La version des consignes est `meaning-v2`,
+naturelle dans la langue cible. La version des consignes est `meaning-v3`,
 enregistrée dans le rapport local des traductions GPT.
 
 ## Ce qui est demandé au moteur
@@ -32,6 +32,46 @@ Ce contexte est limité : il ne fournit pas tout le document à chaque appel
 et ne garantit pas une cohérence parfaite à longue distance. Son ajout
 augmente le texte envoyé et peut augmenter le coût. Le découpage peut aussi
 modifier le nombre d'appels nécessaires, sans créer un appel séparé de résumé.
+
+## PDF : phrases complètes avant l'envoi
+
+Un PDF ne contient pas de paragraphes, seulement des lignes positionnées. Avant
+la traduction, [pdf_text.py](../services/pdf_text.py) :
+
+- recolle un paragraphe coupé par un saut de page (le bloc ne finit pas par
+  une ponctuation et la page suivante commence par une minuscule) ;
+- traite la césure de fin de ligne : « mainte-/nance » devient « maintenance »
+  si ce mot existe ailleurs dans le document, sinon le trait d'union est gardé
+  (« porte-fenêtre ») ;
+- retire un numéro de page seul en toute première ou dernière ligne ;
+- garde une seule fois un en-tête ou pied répété sur au moins la moitié des
+  pages, à sa première place. Seul le numéro de la page courante est ignoré
+  dans la comparaison : « Porte 3 » et « Porte 4 » ne sont jamais confondus.
+
+Ce sont des heuristiques : un PDF en colonnes ou un tableau peut encore être
+mal ordonné. Dans le doute, le texte est conservé plutôt que supprimé.
+
+## Codes, références et liens protégés
+
+Avant l'envoi à GPT, [protection.py](../services/protection.py) remplace les URL,
+e-mails et codes (`RN-204`, `PX-45B`, `ISO9001`) par des jetons `⟦1⟧`. Le modèle
+doit les recopier ; ils sont ensuite restaurés à l'identique. Les nombres,
+dates et unités ne sont pas protégés, car leur format change selon la langue.
+Si un jeton est perdu, dupliqué ou inventé, le lot est renvoyé une seule fois
+sans protection (appel supplémentaire, noté dans le journal) ; le contrôle des
+références signale alors un code modifié.
+
+## Contrôles passage par passage
+
+Avec GPT, chaque passage traduit correspond à un passage source. Le rapport
+désigne le passage à relire (numéro et extrait de 80 caractères) pour :
+nombres et références modifiés, passage resté identique à l'original,
+traduction moins de deux fois plus courte ou plus de deux fois plus longue
+(passages d'au moins 40 caractères), négation ou obligation présente d'un
+seul côté. Une interdiction compte comme une obligation (« ne doit pas »,
+« darf nicht », « prohibited »). Ce sont des mots-clés, pas une analyse du
+sens : faux positifs et oublis restent possibles. Avec DeepL, l'alignement
+n'est pas connu et les contrôles restent globaux.
 
 ## Chunks et vecteurs : deux choses différentes
 

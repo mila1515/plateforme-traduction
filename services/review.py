@@ -3,6 +3,7 @@ import logging
 
 from services.glossary import select_pairs
 from services.openai_translation import extract_blocks, TRANSLATION_PROMPT_VERSION
+from services.passages import check_passages
 from services.quality import check_translation
 from services.word_documents import WordDocument
 
@@ -10,13 +11,15 @@ log = logging.getLogger(__name__)
 
 
 def build_review(source_data, target_data, suffix, source_language, target_language,
-                 provider, model=None, source_blocks=None, glossary=None, comparison=None):
+                 provider, model=None, source_blocks=None, glossary=None, comparison=None, passages=None):
     """Garder les résultats téléchargeables même si l'extraction de contrôle échoue.
 
     Ce service ne lance aucun appel API. Les métadonnées identifient le moteur
     et le glossaire choisis ; le rapport ne contient pas le document complet.
     Si ``comparison`` est fourni, ce dictionnaire reçoit séparément les textes
     pour la session d'interface. Une extraction échouée ne laisse pas de paire partielle.
+    Avec ``passages`` (paires alignées, GPT), nombres et références sont contrôlés
+    passage par passage, avec négations, obligations, longueur et non-traduction.
     """
     if comparison is not None:
         comparison.update({'available': False, 'source': '', 'translation': ''})
@@ -26,6 +29,11 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
         target_text = '\n'.join(extract_blocks(target_data, suffix, None))
         pairs = select_pairs(glossary, source_language, target_language, source_text) if glossary is not None else None
         report = check_translation(source_text, target_text, glossary_pairs=pairs)
+        if passages:
+            # Les alertes localisées remplacent les comparaisons globales des nombres et références.
+            report['issues'] = ([issue for issue in report['issues'] if issue['category'] == 'terminology']
+                                + check_passages(passages, source_language, target_language))
+            report['checks'] = report['checks'] + ['passages']
         if comparison is not None:
             comparison.update({'available': True, 'source': source_text, 'translation': target_text})
     except Exception as exc:
@@ -54,11 +62,39 @@ def untranslated_parts(source_data, suffix, provider):
         return []
 
 
+PASSAGE_MESSAGES = {
+    ('untranslated', None): 'semble non traduit (identique à l’original).',
+    ('length', 'shorter'): 'traduction nettement plus courte que l’original : omission possible.',
+    ('length', 'longer'): 'traduction nettement plus longue que l’original : ajout possible.',
+    ('negation', 'missing'): 'négation de l’original absente de la traduction : sens peut-être inversé.',
+    ('negation', 'added'): 'négation absente de l’original mais présente dans la traduction : sens peut-être inversé.',
+    ('obligation', 'missing'): 'obligation de l’original (doit, obligatoire…) absente de la traduction.',
+    ('obligation', 'added'): 'obligation ajoutée dans la traduction, absente de l’original.',
+}
+
+
+def _values(counts):
+    return ', '.join(f'{value} (×{count})' for value, count in counts.items())
+
+
+def _passage_message(issue):
+    if issue['check'] in ('numbers', 'references'):
+        label = 'nombres' if issue['check'] == 'numbers' else 'références'
+        parts = ([f"{label} absents : {_values(issue['missing'])}"] if issue['missing'] else []) \
+            + ([f"{label} ajoutés : {_values(issue['added'])}"] if issue['added'] else [])
+        detail = ' ; '.join(parts) + '.'
+    else:
+        detail = PASSAGE_MESSAGES[(issue['check'], issue.get('direction'))]
+    return f"Passage {issue['passage']} (« {issue['excerpt']}… ») : {detail}"
+
+
 def readable_alerts(report):
     """Présenter les écarts sans inventer d'alignement entre valeurs ou phrases."""
     messages = []
     for issue in report.get('issues', []):
-        if issue['category'] == 'terminology':
+        if issue['category'] == 'passage':
+            messages.append(_passage_message(issue))
+        elif issue['category'] == 'terminology':
             messages.append('Terme attendu absent : ' + ', '.join(issue['expected_terms'])
                             + ' (source : ' + ', '.join(issue['source_terms']) + ').')
         else:

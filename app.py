@@ -54,17 +54,19 @@ def prepare_batch(uploads, provider):
 
 def translate_one(data, suffix, blocks, provider, source_language, language, api_key, model, glossary):
     """Traduire un document puis construire son rapport et sa comparaison."""
+    passages = []  # Paires alignées (GPT uniquement) pour les contrôles passage par passage.
     if provider == GPT:
         pairs = select_pairs(glossary, source_language, language, '\n'.join(blocks)) if glossary else []
         translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks,
                                                source_language=source_language, glossary_pairs=pairs,
-                                               cache=st.session_state.setdefault('translation_cache', {}))
+                                               cache=st.session_state.setdefault('translation_cache', {}),
+                                               passages=passages)
     else:
         translated = translate_document(data, suffix, language, api_key, source_language=source_language)
     comparison = {}
     quality = build_review(data, translated, suffix, source_language, language, provider,
                            model=model if provider == GPT else None,
-                           source_blocks=blocks, glossary=glossary, comparison=comparison)
+                           source_blocks=blocks, glossary=glossary, comparison=comparison, passages=passages)
     return translated, quality, comparison
 
 
@@ -136,7 +138,8 @@ def render_comparison(result, index, model):
     else:
         st.info('Comparaison indisponible pour ce résultat. Vous pouvez toujours télécharger le document.')
     if quality and quality['status'] != 'unavailable':
-        st.caption('Contrôles complémentaires : nombres, références et glossaire. Ils ne jugent pas le sens.')
+        st.caption('Contrôles complémentaires : nombres, références, glossaire et, avec GPT, indices par passage '
+                   '(négation, obligation, longueur, non-traduction). Ce sont des indices à vérifier, pas un jugement du sens.')
         messages = readable_alerts(quality)
         for message in messages:
             st.warning(message)

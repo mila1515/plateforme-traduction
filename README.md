@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 133 tests utilisent de faux clients API
+**Trois choses distinctes :** les 167 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -307,8 +307,12 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **133 tests réussis avec Python local**, après
-ajout des notes Word et du journal technique.
+Vérification du 22 octobre 2026 : **167 tests réussis avec Python local**, après
+le nettoyage des PDF (sauts de page, césures, en-têtes), la protection des codes
+et liens, et les contrôles passage par passage. Voir
+[Sens, chunks et vecteurs](docs/translation-context.md).
+
+Vérification précédente : **133 tests**, après ajout des notes Word et du journal technique.
 
 Le journal est écrit sur la sortie standard (`docker compose logs traduction`).
 Il contient durées, tailles, nombre d'appels, lots repris du cache et types

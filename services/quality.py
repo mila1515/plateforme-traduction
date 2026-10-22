@@ -54,5 +54,6 @@ def check_translation(source, translation, glossary_pairs=None):
         'issues': issues,
         'limitations': 'Contrôles indicatifs : sens, négations et unités non validés. '
                        'Le contrôle terminologique, si activé, vérifie la présence des termes, pas leur bon emploi. '
+                       'Les indices par passage (GPT) reposent sur des mots-clés : faux positifs et oublis possibles. '
                        'Les changements de format peuvent produire des alertes. Relecture humaine nécessaire.',
     }
