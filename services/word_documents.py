@@ -1,8 +1,8 @@
 """Modifier le texte d'un DOCX sans reconstruire ses tableaux ou ses images.
 
-Le DOCX est une archive OOXML. Seules les parties texte du corps, des en-têtes
-et pieds de page sont modifiées ; les autres fichiers sont recopiés à l'identique.
-Les champs automatiques restent intacts. Les styles de segments sont conservés,
+Le DOCX est une archive OOXML. Seules les parties texte du corps, des en-têtes,
+pieds de page et notes sont modifiées ; les autres fichiers sont recopiés à l'identique.
+Les champs automatiques et commentaires restent intacts et sont signalés. Les styles de segments sont conservés,
 mais leur association aux mots traduits reste approximative.
 """
 from io import BytesIO
@@ -14,7 +14,7 @@ from lxml import etree
 
 W = '{http://schemas.openxmlformats.org/wordprocessingml/2006/main}'
 SPACE = '{http://www.w3.org/XML/1998/namespace}space'
-PART = re.compile(r'word/(?:document|header\d*|footer\d*)\.xml$')
+PART = re.compile(r'word/(?:document|header\d*|footer\d*|footnotes|endnotes)\.xml$')
 
 
 def word_boundary(text, position, start):
@@ -38,6 +38,8 @@ class WordDocument:
         self.data = data
         self.parts = {}
         self.groups = []
+        self.field_texts = 0  # Textes affichés par un champ (lien, sommaire…), non traduits.
+        self.comment_texts = 0
         try:
             self._load()
         except (BadZipFile, etree.XMLSyntaxError, KeyError, RuntimeError, EOFError, OSError) as exc:
@@ -70,14 +72,31 @@ class WordDocument:
                             kind = node.get(W + 'fldCharType')
                             field_depth += (kind == 'begin') - (kind == 'end')
                             field_depth = max(0, field_depth)
-                        skip = (field_depth or any(parent.tag in (W + 'fldSimple', W + 'del')
-                                                  for parent in node.iterancestors()))
-                        if node.tag == W + 't' and not skip:
+                        ancestors = {parent.tag for parent in node.iterancestors()}
+                        in_field = field_depth or W + 'fldSimple' in ancestors
+                        if node.tag == W + 't' and not in_field and W + 'del' not in ancestors:
                             group.append(node)
+                        elif node.tag == W + 't' and in_field and W + 'del' not in ancestors:
+                            self.field_texts += bool((node.text or '').strip())
                         elif node.tag in (W + 'tab', W + 'br', W + 'cr', W + 'drawing', W + 'fldChar'):
                             self._collect(group)
                             group = []
                     self._collect(group)
+            if 'word/comments.xml' in archive.namelist():
+                comments = etree.fromstring(archive.read('word/comments.xml'),
+                                            etree.XMLParser(resolve_entities=False, no_network=True))
+                self.comment_texts = sum(bool((node.text or '').strip()) for node in comments.iter(W + 't'))
+
+    @property
+    def untranslated(self):
+        """Expliquer ce qui reste volontairement dans la langue source."""
+        notices = []
+        if self.field_texts:
+            notices.append('Word : le texte affiché par des champs automatiques (sommaire, liens, renvois, '
+                           'numéros) n’est pas traduit. Mettez à jour les champs dans Word et vérifiez-les.')
+        if self.comment_texts:
+            notices.append('Word : les commentaires de relecture ne sont pas traduits.')
+        return notices
 
     def _collect(self, nodes):
         if ''.join(node.text or '' for node in nodes).strip():

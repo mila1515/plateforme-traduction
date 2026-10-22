@@ -1,11 +1,14 @@
+import logging
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import time
 import deepl
 import openai
 
 LANGUAGES = {'Anglais britannique': 'EN-GB', 'Espagnol': 'ES', 'Allemand': 'DE', 'Français': 'FR'}
 SOURCE_LANGUAGES = {'Français': 'FR', 'Anglais': 'EN', 'Espagnol': 'ES', 'Allemand': 'DE'}
 SOURCE_NAMES = {'FR': 'French', 'EN': 'English', 'ES': 'Spanish', 'DE': 'German'}
+log = logging.getLogger(__name__)
 
 
 def validate_language_pair(source_language, target_language):
@@ -24,8 +27,12 @@ def translate_document(data, suffix, language, api_key, client=None, source_lang
         source = Path(directory) / f'source{suffix}'
         target = Path(directory) / f'resultat{suffix}'
         source.write_bytes(data)
+        started = time.monotonic()
         client.translate_document_from_filepath(str(source), str(target), source_lang=source_language, target_lang=language)
-        return target.read_bytes()
+        result = target.read_bytes()
+    log.info('DeepL document %s : %d octets → %d octets, %s→%s, %.1f s', suffix, len(data), len(result),
+             source_language, language, time.monotonic() - started)
+    return result
 
 
 def error_message(exc):

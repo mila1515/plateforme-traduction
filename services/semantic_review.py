@@ -6,11 +6,15 @@ les citations sont vérifiées localement, le jugement reste à confirmer humain
 from datetime import datetime, timezone
 import hashlib
 import json
+import logging
 import re
+import time
 import unicodedata
 
 from openai import OpenAI
 from services.translation import SOURCE_NAMES, validate_language_pair
+
+log = logging.getLogger(__name__)
 
 MAX_REVIEW_TEXT = 12_000
 PROMPT_VERSION = 'semantic-v1'
@@ -104,6 +108,7 @@ def review_meaning(source, translation, source_language, target_language, api_ke
     if max(len(source), len(translation)) > MAX_REVIEW_TEXT:
         raise ValueError('Analyse du sens : maximum 12 000 caractères par texte. Aucun appel effectué.')
     client = client or OpenAI(api_key=api_key, timeout=90.0, max_retries=0)
+    started = time.monotonic()
     response = client.responses.create(
         model=model, store=False, max_output_tokens=6000,
         instructions=(
@@ -125,6 +130,8 @@ def review_meaning(source, translation, source_language, target_language, api_ke
     if response.status != 'completed' or not response.output_text:
         raise ValueError('Analyse du sens : réponse refusée ou incomplète. Aucun avis affiché ; l’appel peut avoir été facturé.')
     report = parse_review(response.output_text, source, translation)
+    log.info('Analyse du sens (%s) : %s, %d passage(s), %d écarté(s), %.1f s', model, report['assessment'],
+             len(report['issues']), report['discarded_issues'], time.monotonic() - started)
     report.update({'provider': 'OpenAI', 'model': model, 'prompt_version': PROMPT_VERSION,
                    'source_language': source_language, 'target_language': target_language,
                    'pair_sha256': fingerprint(source, translation),

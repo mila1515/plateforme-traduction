@@ -2,6 +2,7 @@
 import hashlib
 from io import BytesIO
 import json
+import logging
 import re
 import time
 from xml.sax.saxutils import escape
@@ -16,6 +17,9 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph
 from services.translation import SOURCE_NAMES, validate_language_pair
 from services.glossary import prompt_guidance
 from services.word_documents import WordDocument
+
+# Journal technique : tailles, durées et statuts uniquement, jamais le texte des documents.
+log = logging.getLogger(__name__)
 
 TARGETS = {'EN-GB': 'British English', 'ES': 'Spanish', 'DE': 'German', 'FR': 'French'}
 MAX_TEXT = 60_000
@@ -35,6 +39,7 @@ def create_with_rate_limit_retry(client, request):
             # Un quota épuisé ne se rétablit pas en quelques secondes.
             if delay is None or getattr(exc, 'code', None) == 'insufficient_quota':
                 raise
+            log.warning('OpenAI : limite de débit (429), nouvelle tentative dans %s s', delay)
             time.sleep(delay)
 
 
@@ -158,7 +163,8 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
     plan = [(index, piece) for index, block in enumerate(blocks) for piece in split_block(block)]
     pieces = [piece for _, piece in plan]
     translated, offset = [], 0
-    for batch in batches(pieces):
+    started, calls, cached = time.monotonic(), 0, 0
+    for number, batch in enumerate(batches(pieces), 1):
         identifiers = [f'block_{index:03d}' for index in range(len(batch))]
         request = dict(
             model=model,
@@ -189,8 +195,14 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
         key = request_key(request)
         if cache is not None and key in cache:
             items = cache[key]
+            cached += 1
+            log.info('OpenAI lot %d : %d passages, %d caractères, repris du cache', number, len(batch), sum(map(len, batch)))
         else:
+            batch_started = time.monotonic()
             response = create_with_rate_limit_retry(client, request)
+            calls += 1
+            log.info('OpenAI lot %d : %d passages, %d caractères, statut %s, %.1f s', number, len(batch),
+                     sum(map(len, batch)), response.status, time.monotonic() - batch_started)
             if response.status != 'completed' or not response.output_text:
                 raise ValueError('OpenAI : réponse refusée ou incomplète. Aucun fichier partiel proposé ; la requête peut avoir été facturée.')
             items = parse_translations(response.output_text, identifiers)
@@ -198,6 +210,8 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
                 cache[key] = items
         translated.extend(items)
         offset += len(batch)
+    log.info('OpenAI document %s (%s) : %d caractères, %d appel(s), %d lot(s) du cache, %.1f s', suffix, model,
+             sum(map(len, blocks)), calls, cached, time.monotonic() - started)
     # Réunir aussi les fragments PDF, sans dupliquer le contexte ni créer de paragraphes artificiels.
     restored = [''] * len(blocks)
     previous_piece = ''

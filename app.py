@@ -5,9 +5,12 @@ localement ; la traduction et les contrôles sont séparés pour rester testable
 """
 import os
 import json
+import logging
 from pathlib import Path
 import streamlit as st
 from dotenv import load_dotenv
+import deepl
+import openai
 from services.files import MAX_FILES, MIMES, validate_document, output_name, make_zip
 from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document, error_message
 from services.openai_translation import extract_blocks, translate_openai_document
@@ -17,9 +20,22 @@ from services.semantic_review import review_meaning, fingerprint, MAX_REVIEW_TEX
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
+# Sortie standard (visible avec docker compose logs). Aucun nom ni contenu de document n'est journalisé.
+logging.basicConfig(level=os.getenv('LOG_LEVEL', 'INFO').upper(),
+                    format='%(asctime)s %(levelname)s %(name)s : %(message)s')
+log = logging.getLogger('app')
+EXPECTED_ERRORS = (ValueError, openai.APIError, deepl.DeepLException)
 
 GPT = 'GPT (OpenAI)'
 SEVERITIES = {'critical': 'critique', 'major': 'majeur', 'minor': 'mineur'}
+
+
+def log_failure(action, exc):
+    """Erreur attendue : type seul. Erreur imprévue : trace complète pour corriger le code."""
+    if isinstance(exc, EXPECTED_ERRORS):
+        log.warning('%s : échec %s', action, type(exc).__name__)
+    else:
+        log.exception('%s : erreur imprévue', action)
 
 
 def prepare_batch(uploads, provider):
@@ -75,6 +91,7 @@ def render_semantic_review(result, index, comparison, quality, model):
                     quality['target_language'], review_key, model=review_model)
                 result.pop('semantic_error', None)
             except Exception as exc:
+                log_failure('Analyse du sens', exc)
                 result['semantic_error'] = error_message(exc)
     if result.get('semantic_error'):
         st.error(result['semantic_error'])
@@ -125,6 +142,8 @@ def render_comparison(result, index, model):
             st.warning(message)
         if not messages:
             st.caption('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
+    for notice in (quality or {}).get('untranslated_parts', []):
+        st.info(notice)
 
 
 def render_quality_details(result, index, quality):
@@ -216,6 +235,7 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
                     results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix,
                                     'error': None, 'quality': quality, 'comparison': comparison})
                 except Exception as exc:
+                    log_failure(f'Traduction du document {index} ({provider}, {suffix})', exc)
                     results.append({'name': name, 'data': None, 'suffix': suffix, 'error': error_message(exc)})
             progress.progress(position / len(prepared))
         st.session_state['results'] = results

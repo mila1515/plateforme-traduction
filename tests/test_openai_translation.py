@@ -237,3 +237,25 @@ def test_timeout_is_not_retried_because_it_may_be_billed():
     with pytest.raises(ConnectionError):
         translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=client, blocks=['Porte 3'])
     assert len(client.calls) == 1
+
+
+def test_logs_record_statistics_but_never_document_text(caplog):
+    import logging
+    from services.review import build_review
+    from services.semantic_review import review_meaning
+    secret = 'Contrat confidentiel numéro SECRET-42'
+    caplog.set_level(logging.INFO)
+    cache = {}
+    translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=FakeClient(), blocks=[secret], cache=cache)
+    translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=FakeClient(), blocks=[secret], cache=cache)
+    build_review(b'invalide', b'invalide', '.docx', 'FR', 'EN-GB', 'DeepL')
+    review = {'assessment': 'no_issue_detected', 'summary': 'Avis à confirmer.', 'issues': []}
+    review_client = SimpleNamespace(responses=SimpleNamespace(
+        create=lambda **kwargs: SimpleNamespace(status='completed', output_text=json.dumps(review))))
+    review_meaning(secret, 'Confidential contract', 'FR', 'EN-GB', 'fake', client=review_client)
+    messages = [record.getMessage() for record in caplog.records]
+    assert any('1 appel(s)' in message for message in messages)
+    assert any('repris du cache' in message for message in messages)
+    assert any('Contrôle indisponible' in message for message in messages)
+    assert any('Analyse du sens' in message for message in messages)
+    assert not any('SECRET' in message or 'confidentiel' in message.lower() for message in messages)

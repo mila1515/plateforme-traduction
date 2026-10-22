@@ -1,7 +1,12 @@
 """Construire le rapport après traduction sans coupler les contrôles à Streamlit."""
+import logging
+
 from services.glossary import select_pairs
 from services.openai_translation import extract_blocks, TRANSLATION_PROMPT_VERSION
 from services.quality import check_translation
+from services.word_documents import WordDocument
+
+log = logging.getLogger(__name__)
 
 
 def build_review(source_data, target_data, suffix, source_language, target_language,
@@ -23,7 +28,9 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
         report = check_translation(source_text, target_text, glossary_pairs=pairs)
         if comparison is not None:
             comparison.update({'available': True, 'source': source_text, 'translation': target_text})
-    except Exception:
+    except Exception as exc:
+        # Le type suffit au diagnostic ; le message pourrait citer le document.
+        log.warning('Contrôle indisponible pour un document %s : %s', suffix, type(exc).__name__)
         report = {'status': 'unavailable', 'checks': [], 'issues': [],
                   'limitations': 'Contrôle automatique indisponible : extraction impossible. Relecture humaine nécessaire.'}
     report.update({'provider': provider, 'model': model,
@@ -32,8 +39,19 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
                    'glossary': None if glossary is None else {
                        key: glossary[key] for key in ('id', 'version', 'status', 'sha256', 'reviewed_by', 'reviewed_at')},
                    'glossary_usage': 'disabled' if glossary is None else
-                       ('prompt_and_check' if provider == 'GPT (OpenAI)' else 'check_only')})
+                       ('prompt_and_check' if provider == 'GPT (OpenAI)' else 'check_only'),
+                   'untranslated_parts': untranslated_parts(source_data, suffix, provider)})
     return report
+
+
+def untranslated_parts(source_data, suffix, provider):
+    """Parties Word laissées en langue source par la traduction GPT (DeepL traite le fichier seul)."""
+    if suffix != '.docx' or provider != 'GPT (OpenAI)':
+        return []
+    try:
+        return WordDocument(source_data).untranslated
+    except ValueError:
+        return []
 
 
 def readable_alerts(report):

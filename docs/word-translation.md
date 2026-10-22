@@ -8,7 +8,8 @@ elle extrait le texte et reconstruit un document simple.
 
 1. Valider le fichier, puis ouvrir son archive OOXML en mémoire.
 2. Parcourir les paragraphes du corps et des cellules, y compris les tableaux
-   imbriqués, ainsi que les en-têtes et pieds de page. Les cellules fusionnées
+   imbriqués, les en-têtes et pieds de page, les notes de bas de page et
+   les notes de fin. Les cellules fusionnées
    ne sont pas dupliquées ; un en-tête partagé n'est traduit qu'une fois.
 3. Regrouper le texte entre les tabulations, sauts et objets conservés. Ne
    pas traduire les codes et résultats des champs automatiques comme PAGE.
@@ -36,8 +37,11 @@ fixe. Les styles de segments sont conservés, mais le texte est réparti
 proportionnellement : une mise en gras peut ne plus correspondre au même
 mot. Les liens gardent leur destination ; vérifier leur libellé traduit.
 
-Le texte des notes de bas de page, notes de fin, commentaires, graphiques,
-SmartArt et objets embarqués n'est pas pris en charge par ce parcours. Les
+Le texte des commentaires, graphiques, SmartArt et objets embarqués n'est pas
+pris en charge par ce parcours. Lorsque le document contient des commentaires
+ou du texte affiché par des champs (sommaire, liens, renvois), le rapport de
+contrôle l'indique dans `untranslated_parts` et l'interface l'affiche sous
+**Comparer les textes**. Les
 éléments conservés peuvent donc encore contenir du texte dans la langue
 source. Les révisions suivies et documents complexes exigent une vérification
 dans Word. Les champs et tables des matières peuvent nécessiter une mise à jour
