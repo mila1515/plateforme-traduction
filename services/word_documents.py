@@ -17,6 +17,20 @@ SPACE = '{http://www.w3.org/XML/1998/namespace}space'
 PART = re.compile(r'word/(?:document|header\d*|footer\d*)\.xml$')
 
 
+def word_boundary(text, position, start):
+    """Déplacer une coupure en plein mot vers l'espace le plus proche après ``start``.
+
+    Sans espace disponible (mot unique, langue sans espaces), la position reste.
+    """
+    position = min(max(position, start), len(text))
+    if position in (start, len(text)) or text[position - 1].isspace() or text[position].isspace():
+        return position
+    left = next((index for index in range(position - 1, start, -1) if text[index - 1].isspace()), None)
+    right = next((index for index in range(position + 1, len(text)) if text[index - 1].isspace()), None)
+    candidates = [index for index in (left, right) if index is not None]
+    return min(candidates, key=lambda index: abs(index - position)) if candidates else position
+
+
 class WordDocument:
     """Conserver une archive et les groupes de nœuds textuels à traduire."""
 
@@ -77,18 +91,19 @@ class WordDocument:
     def render(self, translations):
         """Répartir le nouveau texte dans les nœuds existants sans supprimer le XML.
 
-        Les limites de styles sont réparties proportionnellement. Elles ne sont
-        pas un alignement linguistique : un mot en gras peut changer après traduction.
+        Les limites de styles sont réparties proportionnellement puis calées sur
+        l'espace le plus proche, pour ne pas couper un mot entre deux styles.
+        Ce n'est pas un alignement linguistique : un mot en gras peut changer.
         Les tabulations, sauts, liens, dessins et propriétés des cellules restent.
         """
         if len(translations) != len(self.groups):
             raise ValueError('Word : nombre de passages traduits incorrect.')
-        for nodes, translation in zip(self.groups, translations):
+        for nodes, translation in zip(self.groups, translations, strict=True):
             lengths = [len(node.text or '') for node in nodes]
             total, used, start = sum(lengths), 0, 0
-            for node, length in zip(nodes, lengths):
+            for node, length in zip(nodes, lengths, strict=True):
                 used += length
-                end = round(len(translation) * used / total)
+                end = word_boundary(translation, round(len(translation) * used / total), start)
                 node.text = translation[start:end]
                 node.set(SPACE, 'preserve')
                 start = end

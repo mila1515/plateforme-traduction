@@ -16,15 +16,16 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
     if comparison is not None:
         comparison.update({'available': False, 'source': '', 'translation': ''})
     try:
-        source_text = '\n'.join(source_blocks if source_blocks is not None else extract_blocks(source_data, suffix))
-        target_text = '\n'.join(extract_blocks(target_data, suffix))
+        # Les contrôles locaux ne sont pas soumis à la limite d'envoi OpenAI (cas DeepL).
+        source_text = '\n'.join(source_blocks if source_blocks is not None else extract_blocks(source_data, suffix, None))
+        target_text = '\n'.join(extract_blocks(target_data, suffix, None))
         pairs = select_pairs(glossary, source_language, target_language, source_text) if glossary is not None else None
         report = check_translation(source_text, target_text, glossary_pairs=pairs)
         if comparison is not None:
             comparison.update({'available': True, 'source': source_text, 'translation': target_text})
     except Exception:
         report = {'status': 'unavailable', 'checks': [], 'issues': [],
-                  'limitations': 'Contrôle automatique indisponible : extraction impossible ou limite de texte dépassée. Relecture humaine nécessaire.'}
+                  'limitations': 'Contrôle automatique indisponible : extraction impossible. Relecture humaine nécessaire.'}
     report.update({'provider': provider, 'model': model,
                    'translation_prompt_version': TRANSLATION_PROMPT_VERSION if provider == 'GPT (OpenAI)' else None,
                    'source_language': source_language, 'target_language': target_language,

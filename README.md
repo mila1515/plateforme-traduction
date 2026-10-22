@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 106 tests utilisent de faux clients API
+**Trois choses distinctes :** les 130 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -189,7 +189,10 @@ platforme/
 ├── examples/              # Documents fictifs destinés aux tests
 ├── Dockerfile             # Images application et tests séparées
 ├── compose.yaml           # Services traduction et tests dans Docker Desktop
-├── requirements.txt        # Dépendances Python de l'application
+├── requirements.txt        # Dépendances Python de l'application (plages)
+├── requirements.lock       # Versions exactes utilisées par Docker et la CI
+├── ruff.toml               # Règles du linter
+├── .github/workflows/      # CI : ruff, pytest et build Docker
 ├── .env.example            # Configuration des deux fournisseurs
 ├── .env                    # Clé locale, exclue de Git
 ├── .gitignore              # .env, .venv/, __pycache__/
@@ -304,7 +307,13 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **110 tests réussis avec Python local**.
+Vérification du 22 octobre 2026 après l'audit : **130 tests réussis avec Python local
+et dans Docker** (versions verrouillées). Ajouts : formats de nombres (« 1 500,50 »
+= « 1,500.50 »), citations de l'analyse du sens tolérantes à la typographie,
+coupures Word sur les espaces, contrôle local des longs documents DeepL, cache
+des lots GPT déjà payés et relance sur limite de débit uniquement.
+
+Précédente vérification : **110 tests réussis avec Python local**.
 Les Word dont le XML est endommagé sont rejetés avant l'envoi à GPT ou DeepL,
 avec un message lisible. Le délai du test d'interface du glossaire est porté
 à 10 secondes pour limiter les échecs liés au démarrage.
@@ -335,6 +344,15 @@ linguistique des propositions du glossaire.
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+```
+
+Après une modification de `requirements.txt` ou `requirements-dev.txt`, régénérer
+les versions exactes pour Docker et la CI (Linux, Python 3.13) :
+
+```powershell
+uv pip compile requirements.txt --python-version 3.13 --python-platform linux -o requirements.lock --no-header
+uv pip compile requirements-dev.txt --python-version 3.13 --python-platform linux -o requirements-dev.lock --no-header
 ```
 
 Les tests de traduction utilisent des clients simulés, sans transmission ni facturation. Ils vérifient les deux moteurs, l'absence de retraduction au téléchargement, les résultats incomplets, l'extraction Word et les caractères accentués dans les PDF. Une vérification avec un véritable compte OpenAI ou DeepL reste nécessaire pour confirmer le rendu traduit et les limites du compte.

@@ -35,3 +35,9 @@ def test_glossary_alert_is_readable_without_claiming_a_translation_is_wrong():
     messages = readable_alerts({'issues': [{'category': 'terminology', 'source_terms': ['capteur'],
                                          'expected_terms': ['sensor', 'sensors']}]})
     assert messages == ['Terme attendu absent : sensor, sensors (source : capteur).']
+
+
+def test_long_deepl_document_is_still_checked_locally():
+    long_text = 'Porte 3. ' * 8000  # Plus de 60 000 caractères : limite OpenAI, pas DeepL.
+    report = build_review(docx(long_text), docx(long_text.replace('Porte', 'Door')), '.docx', 'FR', 'EN-GB', 'DeepL')
+    assert report['status'] == 'review_required'

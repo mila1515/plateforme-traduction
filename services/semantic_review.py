@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 import hashlib
 import json
 import re
+import unicodedata
 
 from openai import OpenAI
 from services.translation import SOURCE_NAMES, validate_language_pair
@@ -35,12 +36,32 @@ def fingerprint(source, translation):
     return hashlib.sha256(json.dumps([source, translation], ensure_ascii=False).encode('utf-8')).hexdigest()
 
 
+TYPOGRAPHY = str.maketrans({'’': "'", '‘': "'", '“': '"', '”': '"', '«': '"', '»': '"', '„': '"'})
+
+
 def _normalize(text):
-    return re.sub(r'\s+', ' ', text).strip()
+    """Comparer les citations sans dépendre des guillemets, apostrophes, espaces ni de la casse."""
+    text = unicodedata.normalize('NFKC', text).translate(TYPOGRAPHY).casefold()
+    text = re.sub(r'\s*"\s*', '"', re.sub(r'\s+', ' ', text))  # « mot » ≈ "mot"
+    return text.strip().strip('."… ').strip()
+
+
+def _quotes_found(issue, source, translation):
+    left, right = _normalize(issue['source_quote']), _normalize(issue['translation_quote'])
+    if max(len(issue['source_quote']), len(issue['translation_quote'])) > 400 or (not left and not right):
+        return False
+    if (not left and issue['category'] != 'addition') or (not right and issue['category'] != 'omission'):
+        return False
+    return (not left or left in _normalize(source)) and (not right or right in _normalize(translation))
 
 
 def parse_review(output, source, translation):
-    """Rejeter les résultats incohérents et citations absentes des textes fournis."""
+    """Rejeter les réponses incohérentes ; écarter seulement les passages mal cités.
+
+    Un passage dont une citation est introuvable n'est pas affiché, mais compté
+    dans ``discarded_issues``. Si tous les passages sont écartés, l'avis devient
+    ``inconclusive`` : l'IA a suspecté un problème sans pouvoir le localiser.
+    """
     try:
         report = json.loads(output)
         if not isinstance(report, dict) or set(report) != {'assessment', 'summary', 'issues'}:
@@ -61,18 +82,15 @@ def parse_review(output, source, translation):
                 raise ValueError()
             if not all(isinstance(issue[key], str) for key in ('source_quote', 'translation_quote', 'explanation')):
                 raise ValueError()
-            left, right = _normalize(issue['source_quote']), _normalize(issue['translation_quote'])
-            if max(len(issue['source_quote']), len(issue['translation_quote'])) > 400:
+            if not issue['explanation'].strip():
                 raise ValueError()
-            if not issue['explanation'].strip() or (not left and not right):
-                raise ValueError()
-            if (not left and issue['category'] != 'addition') or (not right and issue['category'] != 'omission'):
-                raise ValueError()
-            if (left and left not in _normalize(source)) or (right and right not in _normalize(translation)):
-                raise ValueError()
+        report['issues'] = [issue for issue in issues if _quotes_found(issue, source, translation)]
+        report['discarded_issues'] = len(issues) - len(report['issues'])
+        if issues and not report['issues']:
+            report['assessment'] = 'inconclusive'
         return report
     except (ValueError, TypeError, KeyError) as exc:
-        raise ValueError('Analyse du sens : réponse invalide ou citations non retrouvées. Aucun avis affiché ; l’appel peut avoir été facturé.') from exc
+        raise ValueError('Analyse du sens : réponse invalide. Aucun avis affiché ; l’appel peut avoir été facturé.') from exc
 
 
 def review_meaning(source, translation, source_language, target_language, api_key,

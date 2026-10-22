@@ -24,7 +24,7 @@ class FakeClient:
         self.calls.append(kwargs)
         blocks = json.loads(kwargs['input'])['blocks']
         items = self.translations if self.translations is not None else ['Translated ' + text for text in blocks.values()]
-        return SimpleNamespace(status=self.status, output_text=json.dumps({'translations': dict(zip(blocks, items))}))
+        return SimpleNamespace(status=self.status, output_text=json.dumps({'translations': dict(zip(blocks, items, strict=False))}))
 
 
 def test_openai_pdf_output_and_api_options():
@@ -174,3 +174,66 @@ def test_context_crosses_batches_but_is_not_exported_as_extra_content():
     assert 'negation' in client.calls[0]['instructions']
     text = '\n'.join(page.extract_text() for page in PdfReader(BytesIO(result)).pages)
     assert text.count('Translated Passage') == 41
+
+
+class FailingAfter(FakeClient):
+    """Simule un échec réseau au n-ième appel, après des lots déjà facturés."""
+    def __init__(self, fail_at):
+        super().__init__()
+        self.fail_at = fail_at
+
+    def create(self, **kwargs):
+        if len(self.calls) + 1 == self.fail_at:
+            self.calls.append(kwargs)
+            raise ConnectionError('réseau')
+        return super().create(**kwargs)
+
+
+def test_relaunch_reuses_paid_batches_from_session_cache():
+    blocks = [f'Paragraphe {index}. ' + 'x' * 5000 for index in range(3)]  # Un lot par paragraphe.
+    cache = {}
+    first = FailingAfter(fail_at=3)
+    with pytest.raises(ConnectionError):
+        translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=first, blocks=blocks, cache=cache)
+    assert len(first.calls) == 3 and len(cache) == 2
+    second = FakeClient()
+    translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=second, blocks=blocks, cache=cache)
+    assert len(second.calls) == 1  # Seul le lot en échec est renvoyé.
+    other_language = FakeClient()
+    translate_openai_document(b'', '.pdf', 'DE', 'fake', client=other_language, blocks=blocks, cache=cache)
+    assert len(other_language.calls) == 3  # Une autre requête n'utilise jamais le cache.
+
+
+def rate_limit(code=None):
+    import httpx
+    import openai
+    response = httpx.Response(429, request=httpx.Request('POST', 'https://api.openai.com/v1/responses'))
+    return openai.RateLimitError('limite', response=response, body={'code': code} if code else None)
+
+
+@pytest.mark.parametrize('code,expected_calls', [(None, 2), ('insufficient_quota', 1)])
+def test_only_temporary_rate_limit_is_retried(monkeypatch, code, expected_calls):
+    import openai
+    import services.openai_translation as module
+    monkeypatch.setattr(module.time, 'sleep', lambda delay: None)
+    client = FakeClient()
+    original = client.create
+    def create(**kwargs):
+        if not client.calls:
+            client.calls.append(kwargs)
+            raise rate_limit(code)
+        return original(**kwargs)
+    client.create = create
+    if code:
+        with pytest.raises(openai.RateLimitError):
+            translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=client, blocks=['Porte 3'])
+    else:
+        translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=client, blocks=['Porte 3'])
+    assert len(client.calls) == expected_calls
+
+
+def test_timeout_is_not_retried_because_it_may_be_billed():
+    client = FailingAfter(fail_at=1)
+    with pytest.raises(ConnectionError):
+        translate_openai_document(b'', '.pdf', 'EN-GB', 'fake', client=client, blocks=['Porte 3'])
+    assert len(client.calls) == 1

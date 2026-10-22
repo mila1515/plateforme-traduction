@@ -29,8 +29,11 @@ et n'est pas effectuée pendant les tests ni automatiquement après traduction.
 - Une analyse réussie reste dans le résultat en session. Afficher les textes,
   télécharger ou changer les sélections ne la relance pas. Le bouton est
   désactivé pour ce résultat après réussite.
-- Les réponses refusées, incomplètes, incohérentes ou avec des citations non
-  retrouvées sont rejetées. Une citation peut être vide du côté absent d'une
+- Les réponses refusées, incomplètes ou incohérentes sont rejetées. Un passage
+  dont la citation est introuvable (après harmonisation des guillemets,
+  apostrophes, espaces, casse et points de suspension) est écarté et compté ;
+  les autres passages restent affichés. Si tous sont écartés, l'avis devient
+  « ne peut pas conclure ». Une citation peut être vide du côté absent d'une
   omission ou d'un ajout, mais pas des deux côtés.
 - Maximum 20 problèmes signalés et citations de 400 caractères. L'IA peut
   manquer des erreurs, mal apprécier le contexte ou signaler à tort une variante.

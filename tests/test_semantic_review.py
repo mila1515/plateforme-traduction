@@ -49,15 +49,42 @@ def test_invalid_input_rejected_before_api(source, target, key):
     assert not client.calls
 
 
-@pytest.mark.parametrize('case', ['invented_quote', 'contradictory_status', 'missing_quote', 'unknown_category', 'invalid_json'])
-def test_unreliable_response_rejected(case):
+@pytest.mark.parametrize('case', ['invented_quote', 'missing_quote', 'too_long_quote'])
+def test_badly_quoted_passage_is_discarded_not_shown(case):
     report = payload()
     if case == 'invented_quote':
         report['issues'][0]['source_quote'] = 'Texte inventé.'
-    elif case == 'contradictory_status':
-        report['assessment'] = 'no_issue_detected'
     elif case == 'missing_quote':
         report['issues'][0]['translation_quote'] = ''
+    else:
+        report['issues'][0]['source_quote'] = SOURCE + ' ' * 400
+    result = parse_review(json.dumps(report), SOURCE, TARGET)
+    # Problème suspecté mais non localisable : relecture humaine, jamais « aucun problème ».
+    assert result['assessment'] == 'inconclusive'
+    assert result['issues'] == [] and result['discarded_issues'] == 1
+
+
+def test_valid_passages_kept_when_another_is_discarded():
+    report = payload()
+    report['issues'].append({**report['issues'][0], 'source_quote': 'Texte inventé.'})
+    result = parse_review(json.dumps(report), SOURCE, TARGET)
+    assert result['assessment'] == 'suspected_issues'
+    assert len(result['issues']) == 1 and result['discarded_issues'] == 1
+
+
+def test_quotes_tolerate_typography_case_and_ellipsis():
+    source = 'L’opérateur « ne doit pas » ouvrir la porte 3.'
+    report = payload()
+    report['issues'][0]['source_quote'] = "l'opérateur \"ne doit pas\" ouvrir…"
+    result = parse_review(json.dumps(report), source, TARGET)
+    assert len(result['issues']) == 1 and result['discarded_issues'] == 0
+
+
+@pytest.mark.parametrize('case', ['contradictory_status', 'unknown_category', 'invalid_json'])
+def test_unreliable_response_rejected(case):
+    report = payload()
+    if case == 'contradictory_status':
+        report['assessment'] = 'no_issue_detected'
     elif case == 'unknown_category':
         report['issues'][0]['category'] = 'approved'
     output = 'not-json' if case == 'invalid_json' else json.dumps(report)

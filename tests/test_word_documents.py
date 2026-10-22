@@ -155,3 +155,23 @@ def test_complex_field_spanning_paragraphs_remains_untranslated():
     result = Document(BytesIO(output))
     assert result.paragraphs[1].text == 'Résultat automatique du champ'
     assert result.paragraphs[-1].text == 'Translated Texte à traduire'
+
+
+def test_style_boundaries_do_not_split_translated_words():
+    document = Document()
+    paragraph = document.add_paragraph()
+    paragraph.add_run('Attention').bold = True
+    paragraph.add_run(' : ne pas ouvrir.')
+    word = WordDocument(save(document))
+    # Coupure proportionnelle : 28 × 9 / 26 ≈ 10, soit « Danger war|ning ».
+    result = Document(BytesIO(word.render(['Danger warning: do not open.'])))
+    runs = result.paragraphs[0].runs
+    assert runs[0].bold and runs[0].text == 'Danger '
+    assert runs[1].text == 'warning: do not open.'
+
+
+@pytest.mark.parametrize('text,position,start,expected', [
+    ('abc def', 5, 0, 4), ('abc def', 4, 0, 4), ('abcdef', 3, 0, 3), ('abc def', 1, 0, 4), ('ab cd ef', 7, 6, 7)])
+def test_word_boundary(text, position, start, expected):
+    from services.word_documents import word_boundary
+    assert word_boundary(text, position, start) == expected

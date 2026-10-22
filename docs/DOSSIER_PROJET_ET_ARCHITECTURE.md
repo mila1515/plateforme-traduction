@@ -249,7 +249,7 @@ sequenceDiagram
     end
 ```
 
-Si une requête GPT échoue, les requêtes précédentes du même document peuvent déjà être facturées. Le prototype ne reprend pas au bloc interrompu. L'utilisateur relance manuellement le document concerné.
+Si une requête GPT échoue, les requêtes précédentes du même document peuvent déjà être facturées. Les lots réussis sont conservés dans un cache de session : une relance manuelle du même document, avec les mêmes choix, ne renvoie que les lots manquants. Seule une limite de débit temporaire (429, hors quota épuisé) est relancée automatiquement, deux fois au plus ; un délai dépassé ou une erreur 5xx ne l'est pas, car la requête a pu être facturée.
 
 ## 9. Architecture actuelle et responsabilités
 

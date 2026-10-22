@@ -2,8 +2,8 @@
 # are excluded from the build context, not merely from the final image.
 *
 !Dockerfile
-!requirements.txt
-!requirements-dev.txt
+!requirements.lock
+!requirements-dev.lock
 !app.py
 !services/
 !services/*.py

@@ -38,7 +38,10 @@ platforme/
 ├── Dockerfile                     Images séparées application / tests
 ├── compose.yaml                  Services traduction et tests
 ├── requirements.txt              Dépendances d'exécution
-├── requirements-dev.txt          Dépendances de test
+├── requirements-dev.txt          Dépendances de test et ruff
+├── requirements*.lock            Versions exactes pour Docker et la CI
+├── ruff.toml                     Règles du linter
+├── .github/workflows/tests.yml   CI : ruff, pytest, build Docker
 ├── .env.example                  Modèle de configuration sans secrets
 ├── .env                          Clés locales, ignorées par Git et Docker build
 └── README.md                      Point d'entrée de la documentation
