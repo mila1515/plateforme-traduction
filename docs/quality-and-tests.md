@@ -4,7 +4,7 @@
 
 | Vérification | Moyen utilisé aujourd'hui | Ce qu'elle prouve |
 | --- | --- | --- |
-| Fonctionnement du logiciel | 198 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, Word corrompus, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
+| Fonctionnement du logiciel | 215 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, Word corrompus, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
 | Alertes sur une traduction | Comparaisons locales des nombres, références et termes | Détection de certains écarts dans le texte extractible |
 | Qualité linguistique réelle | Corpus de 30 passages, essais réels et formulaire de relecture | Premier essai du 22 octobre 2026 (3 moteurs, pré-relecture IA) : voir [résultats](../evaluation/RESULTATS_2026-10-22.md) ; relecture humaine à faire |
 
@@ -13,8 +13,9 @@ dans Docker : **130 tests**, sans appel fournisseur réel ; **133 tests** après
 ajout des notes Word et du journal ; **167 tests** après nettoyage PDF,
 protection des codes et contrôles par passage ; **181 tests** après l'essai
 réel (corpus de 30 cas) et les balises Word ; **198 tests** après la fiche de
-contexte, le repérage des ambiguïtés et le glossaire version 4. Les anciennes
-mentions de 18, 52, 63, 82, 87, 90, 99, 104, 106, 110, 130, 133, 167 ou 181 tests sont des états historiques, pas le
+contexte, le repérage des ambiguïtés et le glossaire version 4 ; **215 tests**
+après les corrections et la mémoire de traduction. Les anciennes
+mentions de 18, 52, 63, 82, 87, 90, 99, 104, 106, 110, 130, 133, 167, 181 ou 198 tests sont des états historiques, pas le
 nombre actuel. Le retrait d'une langue a supprimé des cas paramétrés ; un
 nombre de tests plus élevé ne signifie pas automatiquement une meilleure qualité.
 

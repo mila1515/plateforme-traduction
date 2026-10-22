@@ -27,6 +27,8 @@ platforme/
 │   ├── passages.py                Contrôles passage par passage (négation, obligation…)
 │   ├── review.py                  Extraction après traduction et rapport traçable
 │   ├── ambiguity.py               Repérage facultatif des ambiguïtés de l'original
+│   ├── memory.py                  Mémoire de traduction locale (passages validés)
+│   ├── corrections.py             Corrections du relecteur, fichier reconstruit sans appel
 │   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
