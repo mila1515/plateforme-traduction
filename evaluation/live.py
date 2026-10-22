@@ -16,15 +16,18 @@ import time
 import deepl
 from dotenv import load_dotenv
 
+from services.glossary import load_glossary, select_pairs
 from services.openai_translation import TRANSLATION_PROMPT_VERSION, translate_openai_document
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def translate_gpt(sources, model, target):
+def translate_gpt(sources, model, target, brief=None, glossary=None):
     passages = []
+    pairs = select_pairs(glossary, 'FR', target, '\n'.join(sources)) if glossary else ()
     translate_openai_document(b'', '.pdf', target, os.environ['OPENAI_API_KEY'].strip(), model=model,
-                              blocks=sources, source_language='FR', passages=passages)
+                              blocks=sources, source_language='FR', passages=passages, brief=brief,
+                              glossary_pairs=pairs)
     return [translation for _, translation in passages]
 
 
@@ -40,6 +43,8 @@ def main():
     parser.add_argument('--target', default='EN-GB')
     parser.add_argument('--corpus', type=Path, default=Path(__file__).with_name('corpus.json'))
     parser.add_argument('--output', type=Path, required=True)
+    parser.add_argument('--brief', default='', help='Fiche de contexte transmise à GPT (description du document).')
+    parser.add_argument('--glossary', type=Path, help='Glossaire JSON transmis à GPT pendant la traduction.')
     parser.add_argument('--confirm', action='store_true', help='Accepter l’envoi du corpus et l’appel payant.')
     args = parser.parse_args()
     if not args.confirm:
@@ -49,7 +54,10 @@ def main():
     sources = [case['source'] for case in corpus]
     started = time.monotonic()
     if args.engine == 'gpt':
-        translations = translate_gpt(sources, args.model, args.target)
+        glossary = load_glossary(args.glossary) if args.glossary else None
+        translations = translate_gpt(sources, args.model, args.target,
+                                     brief={'description': args.brief, 'tone': None} if args.brief else None,
+                                     glossary=glossary)
     else:
         translations = translate_deepl(sources, args.target)
     trial = {
@@ -58,6 +66,9 @@ def main():
                      'date': date.today().isoformat(),
                      'prompt_version': TRANSLATION_PROMPT_VERSION if args.engine == 'gpt' else None,
                      'source_language': 'FR', 'target_language': args.target,
+                     'brief': args.brief or None,
+                     'glossary_in_prompt': None if args.engine != 'gpt' or not args.glossary
+                     else {key: glossary[key] for key in ('id', 'version', 'sha256')},
                      'cost_eur': None, 'duration_seconds': round(time.monotonic() - started, 1)},
         'results': [{'id': case['id'], 'source': case['source'], 'translation': translation,
                      'human_decision': 'pending', 'reviewer': '', 'review_notes': ''}

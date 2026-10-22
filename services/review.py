@@ -11,7 +11,7 @@ log = logging.getLogger(__name__)
 
 
 def build_review(source_data, target_data, suffix, source_language, target_language,
-                 provider, model=None, source_blocks=None, glossary=None, comparison=None, passages=None):
+                 provider, model=None, source_blocks=None, glossary=None, comparison=None, passages=None, doubts=None):
     """Garder les résultats téléchargeables même si l'extraction de contrôle échoue.
 
     Ce service ne lance aucun appel API. Les métadonnées identifient le moteur
@@ -20,6 +20,7 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
     pour la session d'interface. Une extraction échouée ne laisse pas de paire partielle.
     Avec ``passages`` (paires alignées, GPT), nombres et références sont contrôlés
     passage par passage, avec négations, obligations, longueur et non-traduction.
+    ``doubts`` : ambiguïtés de l'original repérées par l'analyse dédiée, ajoutées comme alertes.
     """
     if comparison is not None:
         comparison.update({'available': False, 'source': '', 'translation': ''})
@@ -41,6 +42,8 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
         log.warning('Contrôle indisponible pour un document %s : %s', suffix, type(exc).__name__)
         report = {'status': 'unavailable', 'checks': [], 'issues': [],
                   'limitations': 'Contrôle automatique indisponible : extraction impossible. Relecture humaine nécessaire.'}
+    # Un doute ne dépend pas de l'extraction : il reste signalé même si les contrôles échouent.
+    report['issues'] = report['issues'] + [{'category': 'ambiguity', **doubt} for doubt in doubts or []]
     report.update({'provider': provider, 'model': model,
                    'translation_prompt_version': TRANSLATION_PROMPT_VERSION if provider == 'GPT (OpenAI)' else None,
                    'source_language': source_language, 'target_language': target_language,
@@ -94,6 +97,9 @@ def readable_alerts(report):
     for issue in report.get('issues', []):
         if issue['category'] == 'passage':
             messages.append(_passage_message(issue))
+        elif issue['category'] == 'ambiguity':
+            messages.append(f"Passage {issue['passage']} : formulation ambiguë dans l’original (« {issue['quote']} »). "
+                            f"{issue['note']} La traduction a retenu la lecture la plus probable : à confirmer.")
         elif issue['category'] == 'terminology':
             messages.append('Terme attendu absent : ' + ', '.join(issue['expected_terms'])
                             + ' (source : ' + ', '.join(issue['source_terms']) + ').')

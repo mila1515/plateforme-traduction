@@ -10,7 +10,7 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | Pour comprendre ou modifier… | Lire ou ouvrir… |
 | --- | --- |
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
-| Les 50 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
+| Les 55 notions proposées dans les quatre langues | [data/glossaries/technical.json](data/glossaries/technical.json) |
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 181 tests utilisent de faux clients API
+**Trois choses distinctes :** les 198 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -77,7 +77,14 @@ Un mock renvoie des traductions prédéfinies ou du texte préfixé par
 `Translated`. Il peut simuler une erreur, mais ne mesure pas le vrai moteur.
 Dans l'application, **Traduire le lot** appelle le fournisseur réel configuré.
 
-Le glossaire contient 50 notions proposées, version 3, dans quatre langues.
+Le glossaire contient 55 notions proposées, version 4, dans quatre langues. Les
+5 dernières (consignation, intervention, contrôle, condamné, fiche) viennent des
+erreurs de l'essai réel ; le contrôle terminologique repère désormais les erreurs
+de vocabulaire de DeepL sans appel IA.
+
+Deux options facultatives aident la traduction : une **fiche de contexte**
+(domaine, public, ton) et le **repérage des ambiguïtés de l'original** (appel
+OpenAI séparé). Voir [Ambiguïtés et fiche de contexte](docs/ambiguity-and-brief.md).
 Word conserve désormais sa structure source ; PDF GPT reste reconstruit
 simplement. Ni la justesse de toutes les traductions, ni la pagination exacte,
 ni un gain économique n'ont été démontrés par les tests simulés.
@@ -308,7 +315,11 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **181 tests réussis avec Python local**, après
+Vérification du 22 octobre 2026 : **198 tests réussis avec Python local**, après
+ajout de la fiche de contexte, du repérage des ambiguïtés et de 5 notions au
+glossaire (version 4).
+
+Vérification précédente : **181 tests**, après
 le premier essai réel (corpus de 30 cas, [résultats](evaluation/RESULTATS_2026-10-22.md))
 et la traduction des paragraphes Word entiers avec balises de mise en forme
 ([guide Word](docs/word-translation.md)).

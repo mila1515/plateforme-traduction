@@ -18,7 +18,7 @@ def validate_language_pair(source_language, target_language):
         raise ValueError('Choisissez une langue de destination différente de la langue du document.')
 
 
-def translate_document(data, suffix, language, api_key, client=None, source_language='FR'):
+def translate_document(data, suffix, language, api_key, client=None, source_language='FR', formality=None):
     validate_language_pair(source_language, language)
     if not api_key:
         raise ValueError('Configurez DEEPL_API_KEY dans le fichier .env.')
@@ -28,7 +28,10 @@ def translate_document(data, suffix, language, api_key, client=None, source_lang
         target = Path(directory) / f'resultat{suffix}'
         source.write_bytes(data)
         started = time.monotonic()
-        client.translate_document_from_filepath(str(source), str(target), source_lang=source_language, target_lang=language)
+        # « prefer_* » : le vouvoiement est appliqué quand la langue cible le permet, sans erreur sinon.
+        options = {'formality': formality} if formality else {}
+        client.translate_document_from_filepath(str(source), str(target), source_lang=source_language,
+                                                target_lang=language, **options)
         result = target.read_bytes()
     log.info('DeepL document %s : %d octets → %d octets, %s→%s, %.1f s', suffix, len(data), len(result),
              source_language, language, time.monotonic() - started)

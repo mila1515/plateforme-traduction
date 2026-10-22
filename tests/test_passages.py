@@ -90,6 +90,11 @@ def test_gpt_translation_exposes_aligned_passages_to_the_report():
     ('Aucune intervention ne doit être réalisée sans consignation préalable.',
      'No intervention is to be carried out without prior lock-out.'),
     ('Équipement : porte 3. État : non conforme.', 'Equipment: door 3. Status: non-compliant.'),
+    # Essai avec glossaire : interdiction en « No … may » et absence d'obligation en « need not ».
+    ('Aucune intervention ne doit être réalisée sans consignation préalable.',
+     'No intervention may be carried out without prior lockout.'),
+    ("L'opérateur peut, mais ne doit pas, prolonger l'essai au-delà de 30 minutes.",
+     'The operator may, but need not, extend the test beyond 30 minutes.'),
 ])
 def test_real_trial_false_alerts_are_gone(source, translation):
     assert checks(source, translation) == []

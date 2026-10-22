@@ -61,11 +61,33 @@ Avec `gpt-4.1-mini`, les phrases restent entières, le texte du lien est traduit
 et reste un lien, le gras suit « red » / « rote » malgré le changement d'ordre
 des mots, et le numéro de page reste dynamique.
 
+## Glossaire version 4 (5 notions issues de cet essai)
+
+Contrôle terminologique sur les sorties existantes, sans nouvel appel : il
+repère maintenant toutes les erreurs de vocabulaire de DeepL (C05 *presentation*,
+C10 *audit*, C12 *entry*, C15 *test*) ; quelques alertes restent discutables
+(« fiche » → *report*, « condamnée » → *locked*).
+
+Avec le glossaire dans les consignes, `gpt-4.1-mini` suit les termes (C05
+*intervention*, C11 *taken out of service*, C16 *service provider*) : plus aucune
+alerte de terme. Deux fausses alertes par passage (*No … may*, *need not*) ont été
+corrigées ; *unconfirmed* pour « n'est pas confirmée » reste signalé à tort
+(préfixe négatif non reconnu).
+
+## Fiche de contexte et ambiguïtés
+
+Fiche de contexte (domaine ferroviaire, termes imposés) : effet modeste et
+cohérent (interdiction de C25 conservée), difficile à séparer de la variabilité
+du modèle d'un essai à l'autre. Repérage des ambiguïtés : voir
+[docs/ambiguity-and-brief.md](../docs/ambiguity-and-brief.md).
+
 ## Conclusions provisoires (30 phrases, une seule paire de langues)
 
 - Sur ce corpus, GPT traduit mieux les termes métier que DeepL, sans doute grâce
-  aux consignes et au contexte. Le glossaire natif DeepL serait à tester pour
-  « consignation ».
+  aux consignes et au contexte. Le glossaire version 4 repère les erreurs de
+  DeepL ; le glossaire natif DeepL permettrait de les éviter.
+- Le glossaire guide efficacement GPT : à activer par défaut une fois ses termes
+  validés par le métier.
 - `gpt-5.4-mini` n'apporte pas de gain net sur `gpt-4.1-mini` ici, et respecte
   mal les balises Word : garder `gpt-4.1-mini` par défaut.
 - C26 est ambigu en français : le réécrire (« n'est pas obligé de ») ou le

@@ -8,7 +8,7 @@ l'organisation doivent guider la décision.
 ## Première étape recommandée
 
 Conserver le prototype Python/Streamlit pour un pilote contrôlé. Faire valider
-les 50 notions et définir les utilisateurs, langues prioritaires, familles
+les 55 notions et définir les utilisateurs, langues prioritaires, familles
 de documents, confidentialité, budget et responsable de relecture. Mesurer
 la qualité réelle et le temps gagné avant une refonte importante.
 

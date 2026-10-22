@@ -21,7 +21,7 @@ NEGATION = {
 OBLIGATION = {
     'FR': r"\bdoi[st]\b|\bdoivent\b|\bdevr[ao]|\bobligatoire|\bimpérati|\bil faut\b|\b(?:est|sont) tenue?s?\b|\binterdi",
     'EN': r"\bmust\b|\bshall\b|\brequired?\b|\bmandatory\b|\bha(?:s|ve) to\b|\bneeds? to\b|\bobliged\b|\bprohibit|\bforbid"
-          r"|\b(?:is|are) to be\b",
+          r"|\b(?:is|are) to be\b|\bneed not\b|\bneedn't\b|\bmay not\b|\bno\b[^.;]*\bmay\b",
     'DE': r"\bmuss|\bmüss|\bsoll|\bverpflicht|\berforderlich|\b(?:ist|sind) zu\b|\bzwingend|\bverboten"
           r"|\bd(?:arf|ürfen)\b[^.;]*\bnicht\b",
     'ES': r"\bdebe|\bdeber|\bobligatori|\btienen? que\b|\bhay que\b|\bes necesario\b|\bimprescindible|\bprohibid",

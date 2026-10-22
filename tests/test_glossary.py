@@ -18,7 +18,7 @@ from services.review import build_review
 def test_all_language_pairs_available(source, target):
     glossary = load_glossary()
     pairs = select_pairs(glossary, source, target)
-    assert len(pairs) == (0 if source == target.split('-')[0] else 50)
+    assert len(pairs) == (0 if source == target.split('-')[0] else 55)
     assert glossary['status'] == 'proposed'
     assert len(glossary['sha256']) == 64
 
