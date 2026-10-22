@@ -25,6 +25,7 @@ services:
     volumes:
       - ./app.py:/app/app.py:ro
       - ./services:/app/services:ro
+      - ./pages:/app/pages:ro
       - ./tests:/app/tests:ro
       - ./examples:/app/examples:ro
       - ./evaluation:/app/evaluation:ro

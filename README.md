@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 215 tests utilisent de faux clients API
+**Trois choses distinctes :** les 224 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -90,6 +90,11 @@ Avec GPT, le relecteur peut **corriger la traduction** dans l'application (fichi
 reconstruit sans appel) et alimenter une **mémoire de traduction** locale : les
 passages validés sont ensuite réutilisés sans être renvoyés au moteur. Voir
 [Corrections et mémoire](docs/translation-memory.md).
+
+Deux pages du menu latéral servent à la validation humaine : **Relecture des
+essais** (une décision par traduction d'essai, bilan face aux alertes) et
+**Validation du glossaire** (lecture des notions, validation déclarée, glossaire
+ensuite utilisé par défaut).
 Word conserve désormais sa structure source ; PDF GPT reste reconstruit
 simplement. Ni la justesse de toutes les traductions, ni la pagination exacte,
 ni un gain économique n'ont été démontrés par les tests simulés.
@@ -320,7 +325,10 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **215 tests réussis avec Python local**, après
+Vérification du 22 octobre 2026 : **224 tests réussis avec Python local**, après
+ajout des pages de relecture des essais et de validation du glossaire.
+
+Vérification précédente : **215 tests**, après
 ajout des corrections et de la mémoire de traduction.
 
 Vérification précédente : **198 tests**, après

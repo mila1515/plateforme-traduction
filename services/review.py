@@ -80,7 +80,8 @@ def _values(counts):
     return ', '.join(f'{value} (×{count})' for value, count in counts.items())
 
 
-def _passage_message(issue):
+def passage_detail(issue):
+    """Message d'une alerte par passage, sans le rappel du passage."""
     if issue['check'] in ('numbers', 'references'):
         label = 'nombres' if issue['check'] == 'numbers' else 'références'
         parts = ([f"{label} absents : {_values(issue['missing'])}"] if issue['missing'] else []) \
@@ -88,7 +89,11 @@ def _passage_message(issue):
         detail = ' ; '.join(parts) + '.'
     else:
         detail = PASSAGE_MESSAGES[(issue['check'], issue.get('direction'))]
-    return f"Passage {issue['passage']} (« {issue['excerpt']}… ») : {detail}"
+    return detail
+
+
+def _passage_message(issue):
+    return f"Passage {issue['passage']} (« {issue['excerpt']}… ») : {passage_detail(issue)}"
 
 
 def readable_alerts(report):

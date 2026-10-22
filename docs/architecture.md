@@ -29,7 +29,11 @@ platforme/
 │   ├── ambiguity.py               Repérage facultatif des ambiguïtés de l'original
 │   ├── memory.py                  Mémoire de traduction locale (passages validés)
 │   ├── corrections.py             Corrections du relecteur, fichier reconstruit sans appel
+│   ├── trials.py                  Essais réels : relecture humaine et bilan
 │   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
+├── pages/
+│   ├── 1_Relecture_des_essais.py  Décisions humaines sur les essais réels
+│   └── 2_Validation_du_glossaire.py  Lecture et validation métier du glossaire
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés

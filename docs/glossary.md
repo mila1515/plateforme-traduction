@@ -39,6 +39,17 @@ une amélioration réelle. La structure du contexte suit le principe de consigne
 et données distinctes décrit dans la
 [documentation officielle OpenAI](https://developers.openai.com/api/docs/guides/prompt-engineering).
 
+## Valider le glossaire dans l'application
+
+La page **Validation du glossaire** (menu latéral) affiche les notions dans les
+quatre langues, avec recherche. Après vérification par une personne bilingue et
+compétente sur le métier, saisir son nom et la date, cocher la confirmation et
+valider : le statut passe à `approved` et le glossaire devient **utilisé par
+défaut** dans la traduction. **Remettre le glossaire à valider** annule la
+déclaration. Seuls le statut, le nom et la date changent ; les termes se
+corrigent dans le fichier JSON. En Docker, le glossaire fait partie de l'image :
+valider en local, puis committer le fichier.
+
 ## Ajouter ou corriger une notion
 
 1. Ouvrir `data/glossaries/technical.json` en UTF-8. Copier la structure d'une
