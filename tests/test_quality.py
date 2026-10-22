@@ -1,4 +1,6 @@
-from services.quality import check_translation
+import pytest
+
+from services.quality import check_translation, normalize_number
 
 
 def test_numbers_changed_missing_added_and_repeated():
@@ -13,6 +15,27 @@ def test_decimal_separator_and_reference_spacing_allowed():
     report = check_translation('RN 204 : 12,5 mm.', 'RN-204: 12.5 mm.')
     assert report['issues'] == []
     assert report['status'] == 'review_required'
+
+
+@pytest.mark.parametrize('source,translation', [
+    ('Montant 1 500,50 EUR', 'Amount 1,500.50 EUR'),
+    ('Montant 1 500,50 EUR', 'Betrag 1.500,50 EUR'),
+    ('3 000 pièces, 2 500 000 m', '3,000 parts, 2,500,000 m'),
+    ('Dose 0,125 mg', 'Dose 0.125 mg'),
+])
+def test_thousands_and_decimal_formats_are_not_reported(source, translation):
+    assert check_translation(source, translation)['issues'] == []
+
+
+def test_changed_amount_is_still_reported_across_formats():
+    report = check_translation('Montant 1 500,50 EUR', 'Amount 1,050.50 EUR')
+    assert report['issues'] == [{'category': 'numbers', 'missing': {'1500.50': 1}, 'added': {'1050.50': 1}}]
+
+
+def test_year_followed_by_number_is_not_merged():
+    report = check_translation('En 2024, 125 véhicules', 'In 2024, 125 vehicles')
+    assert report['issues'] == []
+    assert normalize_number('2024') == '2024'
 
 
 def test_reference_changed_even_when_numbers_unchanged():

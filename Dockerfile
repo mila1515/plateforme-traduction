@@ -5,8 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
-COPY requirements.txt ./
-RUN python -m pip install --no-cache-dir -r requirements.txt \
+# Versions exactes (requirements.lock) : une reconstruction donne la même image.
+COPY requirements.lock ./
+RUN python -m pip install --no-cache-dir -r requirements.lock \
     && useradd --create-home --uid 10001 appuser
 
 COPY --chown=appuser:appuser app.py ./
@@ -23,8 +24,8 @@ CMD ["python", "-m", "streamlit", "run", "app.py", "--server.address=0.0.0.0", "
 
 FROM application AS tests
 USER root
-COPY requirements-dev.txt ./
-RUN python -m pip install --no-cache-dir -r requirements-dev.txt
+COPY requirements-dev.lock ./
+RUN python -m pip install --no-cache-dir -r requirements-dev.lock
 COPY --chown=appuser:appuser tests/ ./tests/
 COPY --chown=appuser:appuser examples/ ./examples/
 COPY --chown=appuser:appuser evaluation/ ./evaluation/

@@ -4,13 +4,15 @@
 
 | Vérification | Moyen utilisé aujourd'hui | Ce qu'elle prouve |
 | --- | --- | --- |
-| Fonctionnement du logiciel | 87 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, langues, erreurs, rapports et structure Word |
+| Fonctionnement du logiciel | 167 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, Word corrompus, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
 | Alertes sur une traduction | Comparaisons locales des nombres, références et termes | Détection de certains écarts dans le texte extractible |
 | Qualité linguistique réelle | Corpus de 20 passages et formulaire de relecture, à remplir | Aucun résultat mesuré avec ce protocole à ce jour |
 
-La dernière suite complète a réussi dans Docker : **87 tests**. Cette mise à
-jour documentaire ne relance pas les tests ni les fournisseurs. Les anciennes
-mentions de 18, 52, 63, 82 ou 99 tests sont des états historiques, pas le
+La vérification du 22 octobre 2026 après l'audit a réussi avec Python local et
+dans Docker : **130 tests**, sans appel fournisseur réel ; **133 tests** après
+ajout des notes Word et du journal ; **167 tests** après nettoyage PDF,
+protection des codes et contrôles par passage. Les anciennes
+mentions de 18, 52, 63, 82, 87, 90, 99, 104, 106, 110, 130 ou 133 tests sont des états historiques, pas le
 nombre actuel. Le retrait d'une langue a supprimé des cas paramétrés ; un
 nombre de tests plus élevé ne signifie pas automatiquement une meilleure qualité.
 
@@ -35,7 +37,10 @@ Le conteneur `tests` n'a ni clé ni accès réseau ; aucun crédit IA n'est cons
 
 - Un passage présent et non vide peut être faux ou incomplet dans son sens.
 - Les nombres sont comparés sans interprétation des signes, unités ou conversions.
-  Les variations de dates et de séparateurs peuvent produire des alertes légitimes.
+  Les séparateurs de milliers et décimales sont harmonisés (« 1 500,50 », « 1,500.50 »
+  et « 1.500,50 » sont égaux). Un séparateur unique suivi de trois chiffres est lu
+  comme milliers : « 12,500 » au sens de 12,5 est signalé. Les dates reformatées
+  peuvent produire des alertes légitimes, et une inversion jour/mois n'est pas détectée.
 - Le glossaire vérifie la présence de variantes attendues dans le document,
   sans aligner chaque occurrence source et cible. Un terme présent ailleurs
   peut masquer une omission. Flexions, composés et paraphrases peuvent être signalés.
@@ -78,7 +83,8 @@ les régressions de nos contrôles sur ces réponses conservées, sans mesurer
 le comportement actuel du fournisseur. Le projet n'a pas encore de mécanisme
 automatique d'enregistrement/rejeu de réponses réelles.
 
-Un second LLM pourrait aider à prioriser la relecture après calibration sur
-des jugements humains. Il peut lui-même se tromper ; il ne remplace pas la
-validation métier. Ni ce juge, ni une campagne réelle automatique, ni une
-intégration continue GitHub Actions ne sont implémentés aujourd'hui.
+Un avis IA sur le sens est désormais disponible à la demande dans la
+comparaison ; voir [son contrat et ses limites](semantic-review.md).
+Ce juge reste à calibrer sur des jugements humains et peut lui-même se tromper.
+Il ne remplace pas la validation métier. Une campagne réelle automatique et
+une intégration continue GitHub Actions ne sont pas implémentées aujourd'hui.

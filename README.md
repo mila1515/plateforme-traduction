@@ -14,6 +14,8 @@ optionnel et des rapports de contrôle. Tous les résultats sont des
 | L'utilisation, les variantes et la validation du glossaire | [Guide du glossaire](docs/glossary.md) |
 | La conservation des tableaux et images Word | [Traduction Word](docs/word-translation.md) |
 | Ce que prouvent les mocks et les limites des contrôles | [Qualité et tests](docs/quality-and-tests.md) |
+| La vérification du sens à la demande | [Analyse du sens](docs/semantic-review.md) |
+| La traduction naturelle et le découpage avec contexte | [Sens, chunks et vecteurs](docs/translation-context.md) |
 | Les essais réels et la relecture humaine | [Protocole d'évaluation](evaluation/README.md) |
 | Les évolutions vers une utilisation entreprise | [Dossier détaillé](docs/DOSSIER_PROJET_ET_ARCHITECTURE.md) |
 | Les choix prioritaires pour un portail entreprise | [Recommandations entreprise](docs/enterprise.md) |
@@ -52,7 +54,22 @@ fichiers locaux, y compris le glossaire.
 
 ## Contrôle de qualité et évaluation
 
-**Trois choses distinctes :** les 87 tests utilisent de faux clients API
+Dans **Comparer les textes**, **Analyser le sens** permet maintenant de
+demander un avis IA sur les contresens, négations inversées, omissions et
+ajouts. L'option exige un consentement distinct et un appel OpenAI payant,
+même après traduction DeepL. Limite : 12 000 caractères par texte, sans
+troncature. L'avis et les citations restent à confirmer humainement ; il ne
+constitue pas une approbation. Voir [les étapes et limites](docs/semantic-review.md).
+
+Chaque résultat propose **Comparer les textes** : original et traduction
+côte à côte dans un espace replié, avec des alertes en français. La comparaison
+utilise le texte déjà extrait, sans nouvel appel IA, et ne reproduit pas la
+mise en page. Les textes restent en session ; le rapport JSON n'inclut pas
+les documents complets. Si l'extraction échoue, la comparaison est indisponible
+mais le téléchargement reste possible. Les données techniques et le rapport
+sont regroupés dans **Détails et rapport de contrôle**.
+
+**Trois choses distinctes :** les 167 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -98,6 +115,13 @@ et décisions humaines. Aucun score de qualité réelle n'a encore été mesuré
 avec ce protocole.
 
 ## Objectif
+
+Pour GPT, les consignes privilégient explicitement le sens et une formulation
+naturelle : négations, obligations, conditions et responsabilités doivent
+être conservées. Les longs passages sont découpés de préférence aux fins
+de phrase et accompagnés d'un contexte voisin limité. Aucune recherche
+vectorielle ni embeddings dans ce projet. Cela vise une meilleure fidélité,
+sans la garantir : voir [le fonctionnement et ses limites](docs/translation-context.md).
 
 Une petite application web permettant d'importer plusieurs documents, de choisir leur langue et une langue de destination, puis de récupérer les documents traduits pour les imprimer. Français, anglais, espagnol et allemand sont disponibles dans les deux sens.
 
@@ -165,7 +189,10 @@ platforme/
 ├── examples/              # Documents fictifs destinés aux tests
 ├── Dockerfile             # Images application et tests séparées
 ├── compose.yaml           # Services traduction et tests dans Docker Desktop
-├── requirements.txt        # Dépendances Python de l'application
+├── requirements.txt        # Dépendances Python de l'application (plages)
+├── requirements.lock       # Versions exactes utilisées par Docker et la CI
+├── ruff.toml               # Règles du linter
+├── .github/workflows/      # CI : ruff, pytest et build Docker
 ├── .env.example            # Configuration des deux fournisseurs
 ├── .env                    # Clé locale, exclue de Git
 ├── .gitignore              # .env, .venv/, __pycache__/
@@ -204,7 +231,7 @@ Vérifier les langues disponibles auprès de l'API lors de l'intégration. Pour 
 - Import multiple de fichiers `.docx` et `.pdf` contenant du texte.
 - Limites applicatives proposées : 5 fichiers par lot et 5 Mo par fichier, à ajuster aux limites du compte API.
 - Traduction du document complet par DeepL, sans extraction et reconstruction manuelle des paragraphes.
-- Avec OpenAI : extraction du texte PDF, ou du corps Word, tableaux, en-têtes et pieds de page. Traduction puis réinsertion dans le Word d'origine ou création d'un PDF simple. Limite de 60 000 caractères par document, découpés en requêtes de 6 000 caractères au maximum.
+- Avec OpenAI : extraction du texte PDF, ou du corps Word, tableaux, en-têtes et pieds de page. Traduction puis réinsertion dans le Word d'origine ou création d'un PDF simple. Limite de 60 000 caractères par document et lots de 6 000 caractères de texte à traduire, avec jusqu'à 2 400 caractères de contexte en plus.
 - Sortie dans le format d'origine, avec un nom comme `rapport_EN-GB.docx`.
 - Téléchargement individuel et ZIP des traductions réussies.
 - Message clair si un format, une taille ou un document ne peut pas être traité.
@@ -262,7 +289,7 @@ DEEPL_API_KEY=
 
 Vous pouvez laisser `DEEPL_API_KEY` vide pour l'instant et l'ajouter plus tard. Les deux clés sont indépendantes. OpenAI est proposé par défaut dans l'interface. Le modèle est configurable via `OPENAI_MODEL` ; il doit être accessible au compte et prendre en charge Responses et les sorties structurées. L'API OpenAI est facturée à l'usage et nécessite un crédit API utilisable.
 
-Pour Word, OpenAI traduit les textes du corps, des cellules, des en-têtes et pieds de page ; ils sont réinsérés dans le document source. Les tableaux, cellules fusionnées, images, bordures, dimensions, propriétés de sections et styles de segments sont conservés dans le fichier. Un texte plus long peut toutefois modifier les hauteurs et sauts de page. L'association des styles mélangés aux mots traduits est approximative. Les champs automatiques restent intacts et ne sont pas traduits ; le texte des images et des graphiques n'est pas traduit. Voir le [guide Word](docs/word-translation.md).
+Pour Word, OpenAI traduit les textes du corps, des cellules, des en-têtes, pieds de page et notes (bas de page et fin) ; ils sont réinsérés dans le document source. Les tableaux, cellules fusionnées, images, bordures, dimensions, propriétés de sections et styles de segments sont conservés dans le fichier. Un texte plus long peut toutefois modifier les hauteurs et sauts de page. L'association des styles mélangés aux mots traduits est approximative. Les champs automatiques et commentaires restent intacts et ne sont pas traduits ; l'interface le signale ; le texte des images et des graphiques n'est pas traduit. Voir le [guide Word](docs/word-translation.md).
 
 Pour PDF, OpenAI recrée toujours une présentation simple sans conserver les images ni la présentation des tableaux. Les lignes sont traduites selon l'ordre d'extraction ; les PDF à plusieurs colonnes peuvent donner un ordre imparfait. Relire les traductions techniques avant utilisation.
 
@@ -279,6 +306,38 @@ Sans clé API pour le moteur choisi, le bouton de traduction est désactivé. L'
 Tous les noms et événements sont fictifs. Ces documents pédagogiques ne constituent pas des procédures opérationnelles ferroviaires. Ils contiennent du texte sélectionnable pour tester la traduction. Ces fichiers servent uniquement de données de test locales ; ils ne sont plus affichés dans l'application ni intégrés à l'image applicative Docker. Ils sont disponibles dans le conteneur de tests.
 
 ### Lancer les tests
+
+Vérification du 22 octobre 2026 : **167 tests réussis avec Python local**, après
+le nettoyage des PDF (sauts de page, césures, en-têtes), la protection des codes
+et liens, et les contrôles passage par passage. Voir
+[Sens, chunks et vecteurs](docs/translation-context.md).
+
+Vérification précédente : **133 tests**, après ajout des notes Word et du journal technique.
+
+Le journal est écrit sur la sortie standard (`docker compose logs traduction`).
+Il contient durées, tailles, nombre d'appels, lots repris du cache et types
+d'erreur, jamais le nom ni le texte des documents. Niveau réglable avec
+`LOG_LEVEL` dans `.env` (INFO par défaut). Une erreur imprévue est journalisée
+avec sa trace pour corriger le code.
+
+Vérification précédente après l'audit : **130 tests réussis avec Python local
+et dans Docker** (versions verrouillées). Ajouts : formats de nombres (« 1 500,50 »
+= « 1,500.50 »), citations de l'analyse du sens tolérantes à la typographie,
+coupures Word sur les espaces, contrôle local des longs documents DeepL, cache
+des lots GPT déjà payés et relance sur limite de débit uniquement.
+
+Précédente vérification : **110 tests réussis avec Python local**.
+Les Word dont le XML est endommagé sont rejetés avant l'envoi à GPT ou DeepL,
+avec un message lisible. Le délai du test d'interface du glossaire est porté
+à 10 secondes pour limiter les échecs liés au démarrage.
+
+Dernière suite après ajout du découpage avec contexte : **106 tests réussis
+dans Docker**, avec fournisseurs simulés, sans nouvel appel IA réel.
+
+Dernière suite après ajout de l'analyse du sens : **104 tests réussis dans Docker**,
+avec clients simulés. Aucun appel IA réel pour valider cet ajout.
+
+Dernière suite après ajout de la comparaison : **90 tests réussis dans Docker**.
 
 Après conservation de la structure Word : **87 tests passent dans Docker**.
 Les contrôles Word comparent les ressources et le XML hors texte, y compris
@@ -298,6 +357,15 @@ linguistique des propositions du glossaire.
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
 .\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\python.exe -m ruff check .
+```
+
+Après une modification de `requirements.txt` ou `requirements-dev.txt`, régénérer
+les versions exactes pour Docker et la CI (Linux, Python 3.13) :
+
+```powershell
+uv pip compile requirements.txt --python-version 3.13 --python-platform linux -o requirements.lock --no-header
+uv pip compile requirements-dev.txt --python-version 3.13 --python-platform linux -o requirements-dev.lock --no-header
 ```
 
 Les tests de traduction utilisent des clients simulés, sans transmission ni facturation. Ils vérifient les deux moteurs, l'absence de retraduction au téléchargement, les résultats incomplets, l'extraction Word et les caractères accentués dans les PDF. Une vérification avec un véritable compte OpenAI ou DeepL reste nécessaire pour confirmer le rendu traduit et les limites du compte.

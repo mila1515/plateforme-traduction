@@ -121,12 +121,13 @@ def test_vertical_merge_not_translated_twice_and_breaks_are_retained():
 
 def test_long_word_paragraph_returns_to_original_cell():
     document = Document()
-    document.add_table(rows=1, cols=1).cell(0, 0).text = 'A' * 6500
+    # Trois phrases font trois fragments, alors qu'un découpage fixe en ferait deux.
+    document.add_table(rows=1, cols=1).cell(0, 0).text = ('A' * 3500 + '. ') * 3
     source = save(document)
     result = translate_openai_document(source, '.docx', 'DE', 'fake', client=Client())
     restored = Document(BytesIO(result))
     assert len(restored.tables[0].cell(0, 0).paragraphs) == 1
-    assert restored.tables[0].cell(0, 0).text.count('A') == 6500
+    assert restored.tables[0].cell(0, 0).text.count('A') == 10500
 
 
 def test_mismatched_source_blocks_rejected_before_billable_call():
@@ -154,3 +155,83 @@ def test_complex_field_spanning_paragraphs_remains_untranslated():
     result = Document(BytesIO(output))
     assert result.paragraphs[1].text == 'Résultat automatique du champ'
     assert result.paragraphs[-1].text == 'Translated Texte à traduire'
+
+
+def test_style_boundaries_do_not_split_translated_words():
+    document = Document()
+    paragraph = document.add_paragraph()
+    paragraph.add_run('Attention').bold = True
+    paragraph.add_run(' : ne pas ouvrir.')
+    word = WordDocument(save(document))
+    # Coupure proportionnelle : 28 × 9 / 26 ≈ 10, soit « Danger war|ning ».
+    result = Document(BytesIO(word.render(['Danger warning: do not open.'])))
+    runs = result.paragraphs[0].runs
+    assert runs[0].bold and runs[0].text == 'Danger '
+    assert runs[1].text == 'warning: do not open.'
+
+
+@pytest.mark.parametrize('text,position,start,expected', [
+    ('abc def', 5, 0, 4), ('abc def', 4, 0, 4), ('abcdef', 3, 0, 3), ('abc def', 1, 0, 4), ('ab cd ef', 7, 6, 7)])
+def test_word_boundary(text, position, start, expected):
+    from services.word_documents import word_boundary
+    assert word_boundary(text, position, start) == expected
+
+
+def with_parts(source, parts):
+    """Ajouter des parties OOXML (notes, commentaires) absentes de l'API python-docx."""
+    output = BytesIO()
+    with ZipFile(BytesIO(source)) as before, ZipFile(output, 'w') as after:
+        for item in before.infolist():
+            after.writestr(item, before.read(item.filename))
+        for name, xml in parts.items():
+            after.writestr(name, xml)
+    return output.getvalue()
+
+
+NOTES = ('<w:{kind}s xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+         '<w:{kind} w:type="separator" w:id="-1"><w:p><w:r><w:separator/></w:r></w:p></w:{kind}>'
+         '<w:{kind} w:id="1"><w:p><w:r><w:t>{text}</w:t></w:r></w:p></w:{kind}></w:{kind}s>')
+
+
+def test_footnotes_and_endnotes_are_translated_with_the_body():
+    document = Document()
+    document.add_paragraph('Corps du rapport')
+    source = with_parts(save(document), {
+        'word/footnotes.xml': NOTES.format(kind='footnote', text='Note de bas de page'),
+        'word/endnotes.xml': NOTES.format(kind='endnote', text='Note de fin'),
+    })
+    assert {'Note de bas de page', 'Note de fin'} <= set(extract_blocks(source, '.docx'))
+    translated = translate_openai_document(source, '.docx', 'EN-GB', 'fake', client=Client())
+    with ZipFile(BytesIO(translated)) as archive:
+        assert b'Translated Note de bas de page' in archive.read('word/footnotes.xml')
+        assert b'Translated Note de fin' in archive.read('word/endnotes.xml')
+    assert WordDocument(source).untranslated == []
+
+
+def test_field_results_and_comments_are_reported_as_untranslated():
+    from services.review import build_review
+    document = Document()
+    run = document.add_paragraph('Voir ').add_run()
+    for kind, text in (('begin', None), (None, ' HYPERLINK "https://example.org" '), ('separate', None)):
+        element = OxmlElement('w:fldChar' if kind else 'w:instrText')
+        if kind:
+            element.set(qn('w:fldCharType'), kind)
+        else:
+            element.text = text
+        run._r.append(element)
+    result_text = OxmlElement('w:t')
+    result_text.text = 'le site officiel'
+    run._r.append(result_text)
+    end = OxmlElement('w:fldChar')
+    end.set(qn('w:fldCharType'), 'end')
+    run._r.append(end)
+    source = with_parts(save(document), {'word/comments.xml':
+        '<w:comments xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        '<w:comment w:id="0"><w:p><w:r><w:t>À vérifier</w:t></w:r></w:p></w:comment></w:comments>'})
+    word = WordDocument(source)
+    assert 'le site officiel' not in word.blocks
+    assert len(word.untranslated) == 2
+    report = build_review(source, source, '.docx', 'FR', 'EN-GB', 'GPT (OpenAI)')
+    assert report['untranslated_parts'] == word.untranslated
+    # DeepL traduit lui-même le fichier Word : pas d'avertissement inventé.
+    assert build_review(source, source, '.docx', 'FR', 'EN-GB', 'DeepL')['untranslated_parts'] == []

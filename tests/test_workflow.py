@@ -20,9 +20,51 @@ def test_reject_invalid_pdf():
         validate_document('invalid.pdf', b'not a pdf')
 
 
+@pytest.mark.parametrize('xml', ['<invalid', '<invalid/>'])
+def test_reject_corrupt_word_xml(xml):
+    from services.word_documents import WordDocument
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w') as archive:
+        archive.writestr('word/document.xml', xml)
+    for operation in (lambda: validate_document('corrupt.docx', buffer.getvalue()),
+                      lambda: WordDocument(buffer.getvalue())):
+        with pytest.raises(ValueError, match='Word'):
+            operation()
+
+
+@pytest.mark.parametrize('provider', ['GPT (OpenAI)', 'DeepL'])
+def test_corrupt_word_shows_message_without_api_call(monkeypatch, provider):
+    import streamlit as st
+    import services.translation
+    import services.openai_translation
+    from streamlit.testing.v1 import AppTest
+    buffer = BytesIO()
+    with ZipFile(buffer, 'w') as archive:
+        archive.writestr('word/document.xml', '<invalid')
+    class Upload:
+        name = 'corrupt.docx'
+        def getvalue(self):
+            return buffer.getvalue()
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Aucun document corrompu ne doit être envoyé.')
+    monkeypatch.setattr(st, 'file_uploader', lambda *a, **kw: [Upload()])
+    monkeypatch.setenv('OPENAI_API_KEY', 'fake')
+    monkeypatch.setenv('DEEPL_API_KEY', 'fake')
+    monkeypatch.setattr(services.translation, 'translate_document', forbidden)
+    monkeypatch.setattr(services.openai_translation, 'translate_openai_document', forbidden)
+    app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
+    app.selectbox[1].select(provider).run()
+    app.checkbox[0].check().run()
+    app.button[0].click().run()
+    assert not app.exception
+    assert any('endommagé' in error.value for error in app.error)
+    assert 'results' not in app.session_state
+
+
 def test_unique_safe_output_names():
     assert output_name('../report.pdf', 'DE', 1) == '01_report_DE.pdf'
     assert output_name('report.pdf', 'DE', 2) != output_name('report.pdf', 'DE', 1)
+    assert output_name('01_report.docx', 'EN-GB', 1) == '01_report_EN-GB.docx'
     data = make_zip([('01_report_DE.pdf', b'one'), ('02_report_DE.pdf', b'two')])
     with ZipFile(BytesIO(data)) as archive:
         assert len(archive.namelist()) == 2

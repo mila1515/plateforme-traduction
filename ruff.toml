@@ -1,0 +1,7 @@
+# Le code privilégie des lignes longues mais lisibles ; on vérifie surtout les erreurs réelles.
+line-length = 180
+target-version = "py313"
+
+[lint]
+select = ["E", "F", "W", "B"]
+ignore = ["E501"]

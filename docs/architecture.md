@@ -23,6 +23,7 @@ platforme/
 │   ├── glossary.py                Validation du JSON, sélection, consignes, termes
 │   ├── quality.py                 Contrôles locaux des nombres, références, termes
 │   └── review.py                  Extraction après traduction et rapport traçable
+│   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés
@@ -37,7 +38,10 @@ platforme/
 ├── Dockerfile                     Images séparées application / tests
 ├── compose.yaml                  Services traduction et tests
 ├── requirements.txt              Dépendances d'exécution
-├── requirements-dev.txt          Dépendances de test
+├── requirements-dev.txt          Dépendances de test et ruff
+├── requirements*.lock            Versions exactes pour Docker et la CI
+├── ruff.toml                     Règles du linter
+├── .github/workflows/tests.yml   CI : ruff, pytest, build Docker
 ├── .env.example                  Modèle de configuration sans secrets
 ├── .env                          Clés locales, ignorées par Git et Docker build
 └── README.md                      Point d'entrée de la documentation
@@ -79,6 +83,22 @@ flowchart TD
 7. Les résultats restent en session : changer le moteur ou décocher le glossaire
    après traduction ne modifie pas le rapport du lot déjà traité et ne refait
    pas d'appel API.
+
+L'espace **Comparer les textes** réutilise les deux extractions de `review.py`,
+enregistrées séparément du rapport dans le résultat de session. Il affiche
+les textes côte à côte et des alertes lisibles sans nouveau traitement fournisseur.
+Les paragraphes ne sont pas alignés automatiquement. Aucune copie du texte
+complet n'est ajoutée au rapport JSON téléchargé.
+
+`semantic_review.py` peut analyser la paire de textes à la demande, après un
+consentement distinct à l'envoi à OpenAI. Cet appel supplémentaire n'est pas
+automatique et ne change pas le document ; son résultat reste séparé du rapport
+local. Voir [le contrat de l'analyse du sens](semantic-review.md).
+
+La traduction GPT elle-même utilise les consignes `meaning-v2`, un découpage
+privilégiant les fins de phrase et du contexte source voisin limité. Le plan
+des fragments conserve leur emplacement d'origine. Aucune recherche vectorielle
+n'intervient ; voir [sens, chunks et vecteurs](translation-context.md).
 
 Pour Word, `word_documents.py` conserve l'archive source et ses propriétés.
 Le même ordre de groupes textuels est utilisé pour l'extraction et la
