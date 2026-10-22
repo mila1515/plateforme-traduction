@@ -6,8 +6,10 @@ Les données restent séparées du code. Aucun appel fournisseur ni accès en
 from datetime import date
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
+import tempfile
 import unicodedata
 
 
@@ -84,6 +86,36 @@ def load_glossary(path=DEFAULT_PATH):
     canonical = json.dumps(document, ensure_ascii=False, sort_keys=True).encode('utf-8')
     document['sha256'] = hashlib.sha256(canonical).hexdigest()
     return document
+
+
+def set_review_status(path, status, reviewer=None, reviewed_at=None):
+    """Déclarer le glossaire validé (« approved ») ou le remettre à valider (« proposed »).
+
+    Seuls ``status``, ``reviewed_by`` et ``reviewed_at`` changent. Le fichier
+    obtenu est revérifié par ``load_glossary`` avant de remplacer l'original.
+    Une validation reste déclarative : l'application ne contrôle pas le réviseur.
+    """
+    path = Path(path)
+    document = json.loads(path.read_text(encoding='utf-8'))
+    if status == 'approved':
+        if not (reviewer or '').strip():
+            raise ValueError('Indiquez le nom de la personne qui a validé le glossaire.')
+        document.update({'status': 'approved', 'reviewed_by': reviewer.strip(),
+                         'reviewed_at': (reviewed_at or date.today()).isoformat()})
+    elif status == 'proposed':
+        document.update({'status': 'proposed', 'reviewed_by': None, 'reviewed_at': None})
+    else:
+        raise ValueError('Statut de glossaire inconnu.')
+    handle, temporary = tempfile.mkstemp(dir=path.parent, prefix='.glossaire_', suffix='.json')
+    try:
+        with os.fdopen(handle, 'w', encoding='utf-8') as stream:
+            stream.write(json.dumps(document, ensure_ascii=False, indent=2) + '\n')
+        load_glossary(temporary)
+        os.replace(temporary, path)
+    except BaseException:
+        Path(temporary).unlink(missing_ok=True)
+        raise
+    return load_glossary(path)
 
 
 def select_pairs(glossary, source_language, target_language, source_text=None):

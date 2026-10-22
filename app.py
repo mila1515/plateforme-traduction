@@ -305,7 +305,9 @@ try:
 except ValueError as exc:
     glossary = None
     st.warning(str(exc))
-use_glossary = st.checkbox('Utiliser le glossaire technique', value=False, key='use_glossary', disabled=glossary is None)
+# Coché par défaut seulement une fois le glossaire validé par le métier.
+use_glossary = st.checkbox('Utiliser le glossaire technique', key='use_glossary', disabled=glossary is None,
+                           value=glossary is not None and glossary['status'] == 'approved')
 active_glossary = glossary if use_glossary and glossary is not None else None
 ambiguity_model = os.getenv('OPENAI_AMBIGUITY_MODEL', '').strip() or AMBIGUITY_MODEL
 openai_key = bool(os.getenv('OPENAI_API_KEY', '').strip())

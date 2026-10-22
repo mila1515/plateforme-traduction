@@ -28,6 +28,17 @@ Le script traduit tout le corpus et écrit le formulaire avec les décisions à
 Le rapport de `run.py` ajoute pour chaque cas les indices par passage de
 l'application (`passage_alerts`), pour mesurer leurs vraies et fausses alertes.
 
+## Relire un essai dans l'application
+
+Lancer l'application en local (`start.ps1`), puis ouvrir **Relecture des essais**
+dans le menu latéral. Chaque cas affiche l'original, la traduction et les alertes
+automatiques ; choisir En attente, Acceptée ou Rejetée et enregistrer. Seuls la
+décision, les notes, le nom du réviseur et la date sont ajoutés au fichier :
+la traduction enregistrée n'est jamais modifiée. Accepter exige le nom du
+réviseur ; rejeter exige aussi une note expliquant l'erreur. Le bilan croise
+décisions et alertes : « rejetés sans alerte » mesure ce que les contrôles
+automatiques ratent, « acceptés avec alerte » les fausses alertes.
+
 ## Préparer et effectuer un essai manuel
 
 Depuis la racine, créer le dossier local ignoré par Git et un formulaire :
