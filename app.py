@@ -18,6 +18,9 @@ from services.glossary import load_glossary, select_pairs
 from services.review import build_review, readable_alerts
 from services.semantic_review import review_meaning, fingerprint, MAX_REVIEW_TEXT
 from services.ambiguity import find_ambiguities, DEFAULT_MODEL as AMBIGUITY_MODEL
+from services.memory import DEFAULT_PATH as MEMORY_PATH, load_memory, save_memory, remember
+from services.corrections import apply_corrections
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
 load_dotenv(ROOT / '.env')
@@ -29,6 +32,9 @@ EXPECTED_ERRORS = (ValueError, openai.APIError, deepl.DeepLException)
 
 GPT = 'GPT (OpenAI)'
 BRIEF_TONES = {'Automatique': None, 'Formel (vouvoiement)': 'formal', 'Courant': 'informal'}
+MEMORY_MODES = {'Mémoriser seulement les passages corrigés': 'changed',
+                'Mémoriser toute la traduction (entièrement relue)': 'all',
+                'Ne rien mémoriser': 'none'}
 DEEPL_FORMALITY = {'formal': 'prefer_more', 'informal': 'prefer_less'}
 SEVERITIES = {'critical': 'critique', 'major': 'majeur', 'minor': 'mineur'}
 
@@ -56,19 +62,21 @@ def prepare_batch(uploads, provider):
 
 
 def translate_one(data, suffix, blocks, provider, source_language, language, api_key, model, glossary, brief,
-                  ambiguity_model=None):
+                  ambiguity_model=None, memory=None):
     """Traduire un document puis construire son rapport et sa comparaison.
 
     Avec ``ambiguity_model``, un appel OpenAI séparé repère les ambiguïtés du
     texte source ; son échec n'empêche jamais de livrer la traduction.
     """
     passages = []  # Paires alignées (GPT uniquement) pour les contrôles passage par passage.
+    tagged, reused = [], []  # Traductions balisées (corrections) et passages repris de la mémoire.
     if provider == GPT:
         pairs = select_pairs(glossary, source_language, language, '\n'.join(blocks)) if glossary else []
         translated = translate_openai_document(data, suffix, language, api_key, model=model, blocks=blocks,
                                                source_language=source_language, glossary_pairs=pairs,
                                                cache=st.session_state.setdefault('translation_cache', {}),
-                                               passages=passages, brief=brief)
+                                               passages=passages, brief=brief, memory=memory,
+                                               reused=reused, tagged=tagged)
     else:
         translated = translate_document(data, suffix, language, api_key, source_language=source_language,
                                         formality=DEEPL_FORMALITY.get(brief['tone']))
@@ -90,7 +98,9 @@ def translate_one(data, suffix, blocks, provider, source_language, language, api
         quality['brief'] = brief  # Traçabilité : texte saisi par l'utilisateur, pas le document.
     if ambiguity_model:
         quality['ambiguity'] = {'model': ambiguity_model, 'found': len(doubts), 'error': ambiguity_error}
-    return translated, quality, comparison
+    if reused:
+        quality['memory'] = {'reused_passages': reused}
+    return translated, quality, comparison, {'passages': passages, 'tagged': tagged}
 
 
 def render_semantic_review(result, index, comparison, quality, model):
@@ -170,6 +180,10 @@ def render_comparison(result, index, model):
             st.caption('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
     for notice in (quality or {}).get('untranslated_parts', []):
         st.info(notice)
+    reused = (quality or {}).get('memory', {}).get('reused_passages')
+    if reused:
+        st.caption(f"{len(reused)} passage(s) repris de la mémoire de traduction (déjà validés) : "
+                   + ', '.join(map(str, reused)) + '.')
     ambiguity = (quality or {}).get('ambiguity')
     if ambiguity and ambiguity['error']:
         st.info('Analyse des ambiguïtés indisponible : ' + ambiguity['error'])
@@ -194,6 +208,48 @@ def render_quality_details(result, index, quality):
                        result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')
 
 
+def render_corrections(result, index):
+    """Corriger les passages traduits, reconstruire le fichier et alimenter la mémoire."""
+    revision = result.get('revision', 0)
+    table = pd.DataFrame({'N°': range(1, len(result['passages']) + 1),
+                          'Original': [source for source, _ in result['passages']],
+                          'Traduction': [target for _, target in result['passages']]})
+    edited = st.data_editor(table, key=f'corrections_{index}_{revision}', hide_index=True, num_rows='fixed',
+                            disabled=['N°', 'Original'])
+    st.caption('Modifiez la colonne Traduction puis appliquez. Aucun appel au moteur : le fichier est reconstruit '
+               'et les contrôles recalculés. Word : un paragraphe corrigé qui contenait du gras ou un lien garde sa '
+               'mise en forme de façon approximative.')
+    mode = st.radio('Mémoire de traduction', list(MEMORY_MODES), key=f'memory_mode_{index}_{revision}', horizontal=False)
+    if st.button('Appliquer les corrections', key=f'apply_corrections_{index}_{revision}'):
+        report = result['quality']
+        glossary_used = glossary if glossary is not None and report.get('glossary') \
+            and report['glossary']['sha256'] == glossary['sha256'] else None
+        try:
+            translated, quality, comparison, passages, tagged, changed = apply_corrections(
+                result['source'], result['suffix'], report, result['passages'], result['tagged'],
+                list(edited['Traduction']), glossary=glossary_used)
+        except ValueError as exc:
+            st.error(str(exc))
+            return
+        result.update({'data': translated, 'quality': quality, 'comparison': comparison, 'passages': passages,
+                       'tagged': tagged, 'revision': revision + 1})
+        result.pop('semantic_review', None)  # L'avis portait sur l'ancienne traduction.
+        saved = 0
+        if MEMORY_MODES[mode] != 'none':
+            pairs = passages if MEMORY_MODES[mode] == 'all' else [passages[number - 1] for number in changed]
+            try:
+                memory = load_memory(memory_path)
+                saved = remember(memory, pairs, report['source_language'], report['target_language'])
+                save_memory(memory, memory_path)
+            except (OSError, ValueError) as exc:
+                log_failure('Mémoire de traduction', exc)
+                st.session_state['correction_notice'] = f'Corrections appliquées, mais mémoire non enregistrée : {exc}'
+                st.rerun()
+        st.session_state['correction_notice'] = (f'{len(changed)} passage(s) corrigé(s), fichier reconstruit ; '
+                                                 f'{saved} passage(s) enregistré(s) dans la mémoire.')
+        st.rerun()
+
+
 def render_result(result, index, model):
     with st.container(border=True):
         filename_column, download_column = st.columns([4, 1.5], vertical_alignment='center')
@@ -203,6 +259,9 @@ def render_result(result, index, model):
             st.download_button('Télécharger', result['data'], result['name'], MIMES[result['suffix']], key=f'result_{index}')
         with st.expander('Comparer les textes'):
             render_comparison(result, index, model)
+        if result.get('passages') and len(result.get('tagged', [])) == len(result['passages']):
+            with st.expander('Corriger la traduction'):
+                render_corrections(result, index)
         if result.get('quality'):
             with st.expander('Détails et rapport de contrôle'):
                 render_quality_details(result, index, result['quality'])
@@ -256,6 +315,17 @@ find_doubts = st.checkbox(
 st.caption('Signale les phrases à double sens (pronom, portée d’une négation ou d’une condition, terme à deux sens) '
            'que la traduction a dû trancher. Fonctionne aussi avec DeepL.'
            + ('' if openai_key else ' Nécessite OPENAI_API_KEY dans .env.'))
+memory_path = Path(os.getenv('TRANSLATION_MEMORY_PATH', '').strip() or MEMORY_PATH)
+try:
+    memory = load_memory(memory_path)
+    memory_error = None
+except ValueError as exc:
+    memory, memory_error = None, str(exc)
+memory_size = len(memory['entries']) if memory else 0
+use_memory = st.checkbox(f'Réutiliser la mémoire de traduction ({memory_size} passage(s) validé(s))',
+                         value=True, key='use_memory', disabled=provider != GPT or not memory_size)
+if memory_error:
+    st.warning(memory_error)
 if active_glossary is not None and active_glossary['status'] == 'proposed':
     st.warning('Glossaire de démonstration non validé : vérifiez les termes avec une personne bilingue et le métier.')
 if glossary is not None:
@@ -278,11 +348,13 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
         for position, (index, name, data, suffix, blocks) in enumerate(prepared, 1):
             with st.spinner(f'Traduction de {name}…'):
                 try:
-                    translated, quality, comparison = translate_one(data, suffix, blocks, provider, source_language,
-                                                                    language, api_key, model, active_glossary, brief,
-                                                                    ambiguity_model if find_doubts else None)
+                    translated, quality, comparison, aligned = translate_one(
+                        data, suffix, blocks, provider, source_language, language, api_key, model, active_glossary,
+                        brief, ambiguity_model if find_doubts else None,
+                        memory if use_memory and provider == GPT else None)
                     results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix,
-                                    'error': None, 'quality': quality, 'comparison': comparison})
+                                    'error': None, 'quality': quality, 'comparison': comparison,
+                                    'source': data, **aligned})
                 except Exception as exc:
                     log_failure(f'Traduction du document {index} ({provider}, {suffix})', exc)
                     results.append({'name': name, 'data': None, 'suffix': suffix, 'error': error_message(exc)})
@@ -295,6 +367,8 @@ if 'results' in st.session_state:
     st.subheader('Résultats')
     st.caption(f"{st.session_state.get('result_source', 'Français')} → {st.session_state['result_language']} · {st.session_state.get('result_provider', 'DeepL')}")
     st.caption('Traductions automatiques à relire avant utilisation.')
+    if 'correction_notice' in st.session_state:
+        st.success(st.session_state.pop('correction_notice'))
     successful = []
     for index, result in enumerate(st.session_state['results']):
         if result['error']:
@@ -314,3 +388,14 @@ if 'results' in st.session_state:
         del st.session_state['results']
         st.session_state.pop('translation_cache', None)
         st.rerun()
+# Gestion en bas de page : ses boutons ne précèdent jamais « Traduire le lot ».
+with st.expander('Gérer la mémoire de traduction'):
+    st.caption('Passages validés par un relecteur, réutilisés sans appel au moteur (GPT uniquement). Le fichier '
+               f'reste sur ce poste ({memory_path.name}) et contient des phrases de vos documents.')
+    if memory_size:
+        st.download_button('Télécharger la mémoire (JSON)', json.dumps(memory, ensure_ascii=False, indent=2),
+                           'translation_memory.json', 'application/json', key='memory_download')
+        confirm_clear = st.checkbox('Je confirme vouloir vider la mémoire', key='memory_confirm_clear')
+        if st.button('Vider la mémoire', disabled=not confirm_clear, key='memory_clear'):
+            save_memory({'version': memory['version'], 'entries': {}}, memory_path)
+            st.rerun()

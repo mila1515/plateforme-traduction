@@ -15,6 +15,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 from services.translation import SOURCE_NAMES, validate_language_pair
 from services.glossary import prompt_guidance
+from services.memory import lookup
 from services.pdf_text import pdf_paragraphs
 from services.protection import protect, restore
 from services.word_documents import WordDocument, strip_tags
@@ -200,7 +201,8 @@ def render_document(blocks, suffix, language):
     return buffer.getvalue()
 
 
-def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mini', client=None, blocks=None, source_language='FR', glossary_pairs=(), cache=None, passages=None, brief=None):
+def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mini', client=None, blocks=None, source_language='FR', glossary_pairs=(), cache=None, passages=None, brief=None,
+                              memory=None, reused=None, tagged=None):
     """Traduire et reconstruire ; le glossaire optionnel guide chaque requête.
 
     Aucune garantie de respect des termes : le contrôle séparé doit ensuite
@@ -209,6 +211,10 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
     un échec, une relance du même document ne repaie pas les lots réussis.
     ``passages`` (liste) reçoit les paires (source, traduction) alignées pour
     les contrôles passage par passage. ``brief`` : fiche de contexte de l'utilisateur.
+    ``memory`` : mémoire de traduction ; un passage déjà validé est repris sans
+    appel (paragraphes Word sans mise en forme balisée uniquement). ``reused``
+    (liste) reçoit leurs numéros ; ``tagged`` (liste) les traductions balisées,
+    pour reconstruire le document après correction.
     """
     validate_language_pair(source_language, language)
     if not api_key:
@@ -223,7 +229,12 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
     # La correspondance explicite reste valide même si les morceaux ont des tailles variables.
     # Word : paragraphes entiers, mise en forme balisée ; les contrôles gardent le texte lisible.
     sources = word.tagged if word is not None else blocks
-    plan = [(index, piece) for index, block in enumerate(sources) for piece in split_block(block)]
+    # Mémoire : un paragraphe Word balisé n'est pas repris, la mise en forme ne pourrait pas être replacée.
+    remembered = {} if memory is None else {
+        index: target for index, block in enumerate(blocks)
+        if sources[index] == block and (target := lookup(memory, block, source_language, language)) is not None}
+    plan = [(index, piece) for index, block in enumerate(sources) if index not in remembered
+            for piece in split_block(block)]
     pieces = [piece for _, piece in plan]
     translated, offset = [], 0
     started, calls, cached = time.monotonic(), 0, 0
@@ -263,8 +274,8 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
                 cache[key] = items
         translated.extend(items)
         offset += len(batch)
-    log.info('OpenAI document %s (%s) : %d caractères, %d appel(s), %d lot(s) du cache, %.1f s', suffix, model,
-             sum(map(len, blocks)), calls, cached, time.monotonic() - started)
+    log.info('OpenAI document %s (%s) : %d caractères, %d appel(s), %d lot(s) du cache, %d passage(s) de la mémoire, '
+             '%.1f s', suffix, model, sum(map(len, blocks)), calls, cached, len(remembered), time.monotonic() - started)
     # Réunir aussi les fragments PDF, sans dupliquer le contexte ni créer de paragraphes artificiels.
     restored = [''] * len(blocks)
     previous_piece = ''
@@ -274,6 +285,12 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
             restored[index] += ' '
         restored[index] += translated_piece
         previous_piece = source_piece
+    for index, target in remembered.items():
+        restored[index] = target
+    if reused is not None:
+        reused.extend(sorted(index + 1 for index in remembered))
+    if tagged is not None:
+        tagged.extend(restored)
     if passages is not None:
         passages.extend(zip(blocks, map(strip_tags, restored), strict=True))
     if word is not None:
@@ -283,6 +300,21 @@ def translate_openai_document(data, suffix, language, api_key, model='gpt-4.1-mi
                         word.approximate)
         return output
     return render_document(restored, suffix, language)
+
+
+def rebuild_document(data, suffix, language, translations):
+    """Reconstruire le fichier traduit à partir de passages corrigés, sans appel au moteur.
+
+    ``translations`` suit l'ordre des passages ; pour Word, une traduction
+    balisée garde la mise en forme, un texte sans balise la répartit.
+    """
+    if suffix == '.docx':
+        word = WordDocument(data)
+        output = word.render(translations)
+        if word.approximate:
+            log.info('Word : %d paragraphe(s) corrigé(s) sans balises, mise en forme répartie', word.approximate)
+        return output
+    return render_document(translations, suffix, language)
 
 
 def parse_translations(output_text, identifiers):

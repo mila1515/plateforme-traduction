@@ -69,7 +69,7 @@ les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
 sont regroupés dans **Détails et rapport de contrôle**.
 
-**Trois choses distinctes :** les 198 tests utilisent de faux clients API
+**Trois choses distinctes :** les 215 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -85,6 +85,11 @@ de vocabulaire de DeepL sans appel IA.
 Deux options facultatives aident la traduction : une **fiche de contexte**
 (domaine, public, ton) et le **repérage des ambiguïtés de l'original** (appel
 OpenAI séparé). Voir [Ambiguïtés et fiche de contexte](docs/ambiguity-and-brief.md).
+
+Avec GPT, le relecteur peut **corriger la traduction** dans l'application (fichier
+reconstruit sans appel) et alimenter une **mémoire de traduction** locale : les
+passages validés sont ensuite réutilisés sans être renvoyés au moteur. Voir
+[Corrections et mémoire](docs/translation-memory.md).
 Word conserve désormais sa structure source ; PDF GPT reste reconstruit
 simplement. Ni la justesse de toutes les traductions, ni la pagination exacte,
 ni un gain économique n'ont été démontrés par les tests simulés.
@@ -315,7 +320,10 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **198 tests réussis avec Python local**, après
+Vérification du 22 octobre 2026 : **215 tests réussis avec Python local**, après
+ajout des corrections et de la mémoire de traduction.
+
+Vérification précédente : **198 tests**, après
 ajout de la fiche de contexte, du repérage des ambiguïtés et de 5 notions au
 glossaire (version 4).
 
