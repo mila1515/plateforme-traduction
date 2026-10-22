@@ -28,8 +28,10 @@ platforme/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés
 ├── evaluation/
-│   ├── corpus.json                20 passages fictifs pour une évaluation humaine
+│   ├── corpus.json                30 passages fictifs pour une évaluation humaine
 │   ├── run.py                     Préparation et bilan d'un essai, sans API
+│   ├── live.py                    Essai réel payant (GPT ou DeepL), sur --confirm
+│   ├── RESULTATS_2026-10-22.md    Synthèse du premier essai réel
 │   ├── README.md                  Protocole d'évaluation linguistique
 │   └── runs/                      Essais locaux, ignorés par Git
 ├── examples/                      Trois PDF fictifs pour les tests

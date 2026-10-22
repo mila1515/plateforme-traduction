@@ -4,6 +4,7 @@ from collections import Counter
 import json
 from pathlib import Path
 
+from services.passages import check_passages
 from services.quality import check_translation
 from services.glossary import load_glossary, select_pairs
 
@@ -33,13 +34,19 @@ def evaluate(corpus, trial, glossary=None):
                      'reviewer': result.get('reviewer'), 'review_notes': result.get('review_notes'),
                      'control': check_translation(expected[result['id']]['source'], result['translation'],
                          glossary_pairs=select_pairs(glossary, metadata['source_language'], metadata['target_language'])
-                         if glossary is not None else None)})
+                         if glossary is not None else None),
+                     # Indices de l'application (négation, obligation, longueur…), à confronter à la relecture.
+                     'passage_alerts': [{key: value for key, value in issue.items() if key not in ('category', 'passage', 'excerpt')}
+                                        for issue in check_passages([(expected[result['id']]['source'], result['translation'])],
+                                                                    metadata['source_language'], metadata['target_language'])]
+                     if metadata.get('source_language') and metadata.get('target_language') else None})
     decisions = Counter(row['human_decision'] for row in rows)
     return {'metadata': metadata,
             'control_glossary': None if glossary is None else {key: glossary[key] for key in ('id', 'version', 'status', 'sha256')},
             'expected': len(corpus), 'received': len(rows),
             'missing_ids': sorted(set(expected) - set(ids)),
             'cases_with_alerts': sum(bool(row['control']['issues']) for row in rows),
+            'cases_with_passage_alerts': sum(bool(row['passage_alerts']) for row in rows),
             'human_decisions': dict(decisions), 'results': rows,
             'notice': 'Aucun score linguistique automatique. Les décisions humaines sont déclarées, non vérifiées par cet outil.'}
 
