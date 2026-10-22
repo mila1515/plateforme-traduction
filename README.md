@@ -304,6 +304,11 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
+Vérification du 22 octobre 2026 : **110 tests réussis avec Python local**.
+Les Word dont le XML est endommagé sont rejetés avant l'envoi à GPT ou DeepL,
+avec un message lisible. Le délai du test d'interface du glossaire est porté
+à 10 secondes pour limiter les échecs liés au démarrage.
+
 Dernière suite après ajout du découpage avec contexte : **106 tests réussis
 dans Docker**, avec fournisseurs simulés, sans nouvel appel IA réel.
 

@@ -2,6 +2,7 @@ from io import BytesIO
 from pathlib import PurePosixPath
 from zipfile import ZipFile, ZIP_DEFLATED
 from pypdf import PdfReader
+from services.word_documents import WordDocument
 
 MAX_FILES = 5
 MAX_BYTES = 5 * 1024 * 1024
@@ -31,6 +32,8 @@ def validate_document(name, data):
                     raise ValueError('Ce fichier ne contient pas de document Word valide.')
                 if sum(i.file_size for i in archive.infolist()) > 50 * 1024 * 1024:
                     raise ValueError('Document Word trop volumineux après décompression.')
+            # Contrôler le XML avant tout envoi, pour GPT comme pour DeepL.
+            WordDocument(data)
     except ValueError:
         raise
     except Exception as exc:

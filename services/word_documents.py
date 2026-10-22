@@ -7,7 +7,7 @@ mais leur association aux mots traduits reste approximative.
 """
 from io import BytesIO
 import re
-from zipfile import ZipFile
+from zipfile import ZipFile, BadZipFile
 
 from lxml import etree
 
@@ -24,12 +24,23 @@ class WordDocument:
         self.data = data
         self.parts = {}
         self.groups = []
-        with ZipFile(BytesIO(data)) as archive:
+        try:
+            self._load()
+        except (BadZipFile, etree.XMLSyntaxError, KeyError, RuntimeError, EOFError, OSError) as exc:
+            raise ValueError('Document Word illisible ou endommagé. Essayez de le réenregistrer dans Word.') from exc
+
+    def _load(self):
+        """Lire le contenu sans laisser remonter les erreurs techniques du ZIP/XML."""
+        with ZipFile(BytesIO(self.data)) as archive:
+            if 'word/document.xml' not in archive.namelist():
+                raise ValueError('Document Word invalide : contenu principal absent.')
             for name in archive.namelist():
                 if not PART.fullmatch(name):
                     continue
                 parser = etree.XMLParser(resolve_entities=False, no_network=True)
                 root = etree.fromstring(archive.read(name), parser)
+                if name == 'word/document.xml' and (root.tag != W + 'document' or root.find(W + 'body') is None):
+                    raise ValueError('Document Word invalide : structure du contenu principal incorrecte.')
                 self.parts[name] = root
                 field_depth = 0  # Un champ complexe peut traverser plusieurs paragraphes.
                 # Chaque paragraphe appartient une seule fois à l'arbre XML,
