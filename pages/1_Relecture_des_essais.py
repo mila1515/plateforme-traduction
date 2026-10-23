@@ -74,7 +74,7 @@ with st.form(f'review_{path.stem}'):
             notes = st.text_area('Notes de relecture', value=result.get('review_notes') or '', key=f'notes_{key}',
                                  height=68, placeholder='Obligatoire pour un rejet : quelle erreur, quelle gravité ?')
             decisions[result['id']] = {'human_decision': decision, 'review_notes': notes}
-    submitted = st.form_submit_button('Enregistrer les décisions', type='primary')
+    submitted = st.form_submit_button('Enregistrer les décisions', type='primary', key='save_review')
 if submitted:
     try:
         changed = save_review(path, decisions, reviewer)

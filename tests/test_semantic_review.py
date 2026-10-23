@@ -135,5 +135,91 @@ def test_ui_requires_separate_consent_and_does_not_repeat_paid_analysis(monkeypa
     app.run()
     assert app.button(key=f'semantic_run_0_{pair}').disabled
     assert len(calls) == 1
-    app.selectbox[1].select('DeepL').run()
+    app.selectbox(key='provider').select('DeepL').run()
     assert len(calls) == 1
+
+
+def test_long_document_is_reviewed_in_parts_and_verdicts_are_combined():
+    from services.semantic_review import review_document, chunks
+    pairs = [(f'Phrase source {index}. ' + 'x' * 2900, f'Source sentence {index}. ' + 'y' * 2900) for index in range(5)]
+    assert [len(group) for group in chunks(pairs)] == [2, 2, 1]  # ≈ 6 000 caractères par partie.
+    verdicts = iter([{'assessment': 'no_issue_detected', 'summary': 'Rien.', 'issues': []},
+                     {'assessment': 'suspected_issues', 'summary': 'Négation.', 'discarded_issues': 1,
+                      'issues': [{'category': 'negation', 'severity': 'critical', 'source_quote': 'a',
+                                  'translation_quote': 'b', 'explanation': 'Inversée.'}]},
+                     {'assessment': 'inconclusive', 'summary': 'Doute.', 'issues': []}])
+    calls = []
+
+    class Client:
+        def __init__(self):
+            self.responses = self
+
+        def create(self, **kwargs):
+            calls.append(json.loads(kwargs['input']))
+            verdict = next(verdicts)
+            return SimpleNamespace(status='completed', output_text=json.dumps(
+                {key: verdict[key] for key in ('assessment', 'summary', 'issues')}))
+    import services.semantic_review as module
+    original = module.parse_review
+    module.parse_review = lambda output, source, translation: {**json.loads(output), 'discarded_issues': 0}
+    try:
+        report = review_document(pairs, 'FR', 'EN-GB', 'fake', client=Client())
+    finally:
+        module.parse_review = original
+    assert len(calls) == 3 and calls[2]['source'].startswith('Phrase source 4.')
+    assert report['assessment'] == 'suspected_issues' and report['parts'] == 3
+    assert report['issues'][0]['part'] == 2 and report['summary'].startswith('Partie 1/3 : Rien.')
+    assert report['human_validation_required'] is True
+
+
+def test_passage_longer_than_one_call_is_refused_before_sending():
+    from services.semantic_review import review_document
+    client = Client()
+    with pytest.raises(ValueError, match='dépasse'):
+        review_document([('x' * (MAX_REVIEW_TEXT + 1), 'y')], 'FR', 'EN-GB', 'fake', client=client)
+    assert not client.calls
+
+
+@pytest.mark.parametrize('source,translation,passages,expected', [
+    ('A\nB', 'X\nY', None, [('A', 'X'), ('B', 'Y')]),                        # DeepL : paragraphes appariés.
+    ('A\nB', 'X Y', None, [('A\nB', 'X Y')]),                                 # Court : texte entier.
+    ('A\n' + 'x' * 13_000, 'X', None, None),                                  # Long et non apparié : refus.
+    ('ignoré', 'ignoré', [('A', 'X')], [('A', 'X')]),                         # GPT : passages exacts.
+])
+def test_meaning_pairs(source, translation, passages, expected):
+    from services.semantic_review import meaning_pairs
+    assert meaning_pairs(source, translation, passages) == expected
+
+
+def test_automatic_meaning_check_runs_after_translation_only_when_chosen(monkeypatch):
+    import streamlit as st
+    import services.openai_translation
+    from streamlit.testing.v1 import AppTest
+    sample = (Path(__file__).resolve().parents[1] / 'examples' / 'rapport_incident_FR.pdf').read_bytes()
+
+    class Upload:
+        name = 'rapport.pdf'
+
+        def getvalue(self):
+            return sample
+    calls = []
+
+    def fake_review(pairs, *args, **kwargs):
+        calls.append(pairs)
+        return {**payload(), 'parts': 1, 'model': kwargs['model'], 'human_validation_required': True}
+
+    def translate(*args, **kwargs):
+        kwargs['passages'].extend([(SOURCE, TARGET)])
+        return sample
+    monkeypatch.setenv('OPENAI_API_KEY', 'fake')
+    monkeypatch.setattr(st, 'file_uploader', lambda *a, **kw: [Upload()])
+    monkeypatch.setattr(services.openai_translation, 'translate_openai_document', translate)
+    monkeypatch.setattr(services.semantic_review, 'review_document', fake_review)
+    app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'), default_timeout=10).run()
+    app.checkbox[0].check().run()
+    app.button(key='translate').click().run()
+    assert not app.exception and not calls  # Option décochée par défaut.
+    app.checkbox(key='check_meaning').check().run()
+    app.button(key='translate').click().run()
+    assert not app.exception and calls == [[(SOURCE, TARGET)]]
+    assert app.session_state['results'][0]['semantic_review']['assessment'] == 'suspected_issues'

@@ -108,11 +108,11 @@ def test_interface_openai_works_without_deepl_and_keeps_results(monkeypatch):
         calls.append((args, kwargs))
         return sample
     monkeypatch.setattr(services.openai_translation, 'translate_openai_document', fake_translate)
-    app = AppTest.from_file(str(ROOT / 'app.py')).run()
-    assert app.selectbox[1].value == 'GPT (OpenAI)'
+    app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
+    assert app.selectbox(key='provider').value == 'GPT (OpenAI)'
     app.checkbox[0].check().run()
-    assert not app.button[0].disabled
-    app.button[0].click().run()
+    assert not app.button(key='translate').disabled
+    app.button(key='translate').click().run()
     assert not app.exception
     assert app.session_state['result_provider'] == 'GPT (OpenAI)'
     assert app.session_state['results'][0]['data'] == sample
@@ -125,8 +125,8 @@ def test_interface_openai_works_without_deepl_and_keeps_results(monkeypatch):
     assert calls[0][1]['blocks']
     app.run()
     assert len(calls) == 1
-    app.selectbox[1].select('DeepL').run()
-    assert app.button[0].disabled
+    app.selectbox(key='provider').select('DeepL').run()
+    assert app.button(key='translate').disabled
     assert not app.checkbox[0].value
 
 

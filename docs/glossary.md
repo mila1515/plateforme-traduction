@@ -74,7 +74,7 @@ valider en local, puis committer le fichier.
    mots nouveaux et des contre-exemples où le contexte ne convient pas.
    Committer ensuite les changements de données, tests et documentation.
 
-## Limites à expliquer en entretien
+## Limites à connaître
 
 La détection ignore la casse, les variantes Unicode, les apostrophes courbes
 et les espaces multiples. Les limites de mots évitent par exemple de trouver

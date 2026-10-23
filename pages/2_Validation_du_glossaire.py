@@ -43,7 +43,7 @@ with st.form('glossary_review'):
     reviewed_at = st.date_input('Date de la vérification', value=date.today(), format='DD/MM/YYYY')
     confirmed = st.checkbox(f"Les quatre langues et les contextes des {len(glossary['entries'])} notions ont été "
                             'vérifiés par une personne bilingue et compétente sur le métier.')
-    approve = st.form_submit_button('Valider le glossaire', type='primary')
+    approve = st.form_submit_button('Valider le glossaire', type='primary', key='approve_glossary')
 if approve:
     if not confirmed:
         st.error('Cochez la confirmation : la validation porte sur tout le fichier.')

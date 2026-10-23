@@ -53,9 +53,9 @@ def test_corrupt_word_shows_message_without_api_call(monkeypatch, provider):
     monkeypatch.setattr(services.translation, 'translate_document', forbidden)
     monkeypatch.setattr(services.openai_translation, 'translate_openai_document', forbidden)
     app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
-    app.selectbox[1].select(provider).run()
+    app.selectbox(key='provider').select(provider).run()
     app.checkbox[0].check().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception
     assert any('endommagé' in error.value for error in app.error)
     assert 'results' not in app.session_state
@@ -86,12 +86,12 @@ def test_interface_without_key(monkeypatch):
     from streamlit.testing.v1 import AppTest
     monkeypatch.setenv('DEEPL_API_KEY', '')
     monkeypatch.setenv('OPENAI_API_KEY', '')
-    app = AppTest.from_file(str(ROOT / 'app.py')).run()
+    app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
     assert not app.exception
     assert len(app.tabs) == 0
     assert app.button[0].label == 'Traduire le lot'
-    assert app.button[0].disabled
-    app.selectbox[0].select('Allemand').run()
+    assert app.button(key='translate').disabled
+    app.selectbox(key='target_language').select('Allemand').run()
     assert not app.exception
 
 
@@ -101,7 +101,7 @@ def test_downloading_results_does_not_translate(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError('Unexpected translation')
     monkeypatch.setattr(services.translation, 'translate_document', forbidden)
-    app = AppTest.from_file(str(ROOT / 'app.py'))
+    app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10)
     app.session_state['results'] = [{'name': 'result.pdf', 'data': b'PDF', 'suffix': '.pdf', 'error': None}]
     app.session_state['result_language'] = 'Allemand'
     app.run()
@@ -130,10 +130,10 @@ def test_batch_continues_after_service_failure(monkeypatch):
             raise RuntimeError('simulated failure')
         return sample
     monkeypatch.setattr(services.translation, 'translate_document', fake_translate)
-    app = AppTest.from_file(str(ROOT / 'app.py')).run()
-    app.selectbox[1].select('DeepL').run()
+    app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
+    app.selectbox(key='provider').select('DeepL').run()
     app.checkbox[0].check().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception
     assert len(calls) == 2
     results = app.session_state['results']

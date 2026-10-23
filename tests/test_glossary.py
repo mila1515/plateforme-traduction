@@ -120,10 +120,10 @@ def test_ui_opt_in_uses_glossary_and_keeps_last_report(monkeypatch, provider):
     monkeypatch.setattr(services.translation, 'translate_document', translate)
     app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'), default_timeout=10).run()
     assert not app.checkbox(key='use_glossary').value
-    app.selectbox[1].select(provider).run()
+    app.selectbox(key='provider').select(provider).run()
     app.checkbox[0].check().run()
     app.checkbox(key='use_glossary').check().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception
     report = app.session_state['results'][0]['quality']
     assert report['glossary']['status'] == 'proposed'

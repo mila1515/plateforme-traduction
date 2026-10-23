@@ -7,6 +7,7 @@ signalée (« sans » → « no »), et un contresens subtil peut passer inaper�
 """
 import re
 
+from services.glossary import terminology_issues
 from services.quality import check_translation
 
 # Marqueurs de négation et d'obligation. Présence/absence uniquement, sans compter :
@@ -47,8 +48,12 @@ def _has(patterns, language, text):
     return re.search(patterns[language], text) is not None
 
 
-def check_passages(passages, source_language, target_language):
-    """Alertes localisées : nombres, références, non-traduction, longueur, négation, obligation."""
+def check_passages(passages, source_language, target_language, glossary_pairs=None):
+    """Alertes localisées : nombres, références, termes, non-traduction, longueur, négation, obligation.
+
+    Avec ``glossary_pairs``, un terme attendu est cherché dans la traduction du
+    passage même, et non n'importe où dans le document.
+    """
     issues = []
     for number, (source, translation) in enumerate(passages, 1):
         found = []
@@ -61,6 +66,9 @@ def check_passages(passages, source_language, target_language):
             if ratio < SHORT or ratio > LONG:
                 found.append({'check': 'length', 'direction': 'shorter' if ratio < SHORT else 'longer',
                               'ratio': round(ratio, 2)})
+        for issue in terminology_issues(source, translation, glossary_pairs or []):
+            found.append({'check': 'terminology', 'term_id': issue['term_id'], 'source_terms': issue['source_terms'],
+                          'expected_terms': issue['expected_terms']})
         for check, patterns in (('negation', NEGATION), ('obligation', OBLIGATION)):
             before, after = _has(patterns, source_language, source), _has(patterns, target_language, translation)
             if before != after:

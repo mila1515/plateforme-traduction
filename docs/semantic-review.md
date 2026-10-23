@@ -18,14 +18,22 @@ omissions, ajouts, valeurs et unités. Il ne modifie pas les documents.
 Le service utilise `OPENAI_REVIEW_MODEL` s'il est renseigné ; sinon il reprend
 `OPENAI_MODEL`. Le modèle peut donc être le même que celui qui a traduit :
 ce n'est pas une validation indépendante. L'analyse ajoute un appel payant
-et n'est pas effectuée pendant les tests ni automatiquement après traduction.
+et n'est jamais effectuée pendant les tests. Elle se lance à la demande, ou
+automatiquement après traduction si l'option **Contrôler le sens après la
+traduction** est cochée (consentement donné en la cochant).
 
 ## Contrat et limites
 
-- Maximum 12 000 caractères pour chacun des deux textes. Au-delà, aucun appel
-  n'est lancé ; les textes ne sont pas tronqués. La comparaison manuelle reste accessible.
-- Un seul appel par analyse, sans relance automatique. En cas d'échec, un
-  nouvel essai demande un clic explicite et peut être facturé à nouveau.
+- Tout le document est analysé, par parties d'environ 6 000 caractères : un
+  appel par partie. Les parties suivent les passages alignés (GPT) ou les
+  paragraphes quand leur nombre est identique des deux côtés (DeepL). Sinon,
+  le texte entier est analysé s'il fait au plus 12 000 caractères ; au-delà,
+  rien n'est envoyé plutôt qu'une analyse tronquée présentée comme complète.
+- L'avis global est « problèmes suspectés » dès qu'une partie en signale,
+  « ne peut pas conclure » si une partie ne conclut pas. Chaque problème
+  indique sa partie.
+- Aucune relance automatique. En cas d'échec, un nouvel essai demande un clic
+  explicite et peut être facturé à nouveau.
 - Une analyse réussie reste dans le résultat en session. Afficher les textes,
   télécharger ou changer les sélections ne la relance pas. Le bouton est
   désactivé pour ce résultat après réussite.

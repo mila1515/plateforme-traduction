@@ -5,7 +5,9 @@ les alertes automatiques et les essais réels. Le protocole ci-dessous prépare
 des preuves ; `run.py` ne lance aucune traduction, `live.py` lance un essai réel
 payant sur confirmation. Aucun des deux ne fournit de résultat validé.
 
-Premier essai réel : voir [RESULTATS_2026-10-22.md](RESULTATS_2026-10-22.md).
+Premier essai réel : voir [RESULTATS_2026-10-22.md](RESULTATS_2026-10-22.md), et sa synthèse Word
+[Bilan d'évaluation de la qualité](../docs/Bilan_evaluation_qualite_FR-EN.docx). Après la relecture
+humaine, mettre à jour les constantes de `bilan_qualite.py` et le régénérer.
 
 Le corpus contient 30 passages fictifs français destinés à un premier essai
 vers l'anglais britannique. Les cas C21 à C30 ciblent les pièges ajoutés après
@@ -104,7 +106,7 @@ incluent désormais les en-têtes et pieds de page, hors champs automatiques.
 Le contrôle n'ajoute aucun appel facturé et ne bloque
 pas le téléchargement. Tous les résultats restent des brouillons à relire.
 
-## Preuves utiles en entretien
+## Présenter les résultats
 
 Présenter un cas source, une sortie réelle erronée, l'analyse du réviseur,
 la correction apportée et le résultat d'un nouvel essai. Conserver des cas

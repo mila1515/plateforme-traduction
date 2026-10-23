@@ -16,10 +16,11 @@ from services.translation import LANGUAGES, SOURCE_LANGUAGES, translate_document
 from services.openai_translation import extract_blocks, translate_openai_document
 from services.glossary import load_glossary, select_pairs
 from services.review import build_review, readable_alerts
-from services.semantic_review import review_meaning, fingerprint, MAX_REVIEW_TEXT
+from services.semantic_review import review_document, fingerprint, meaning_pairs, chunks
 from services.ambiguity import find_ambiguities, DEFAULT_MODEL as AMBIGUITY_MODEL
 from services.memory import DEFAULT_PATH as MEMORY_PATH, load_memory, save_memory, remember
 from services.corrections import apply_corrections
+from services.quality_report import build_quality_report
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
@@ -36,6 +37,8 @@ MEMORY_MODES = {'Mémoriser seulement les passages corrigés': 'changed',
                 'Mémoriser toute la traduction (entièrement relue)': 'all',
                 'Ne rien mémoriser': 'none'}
 DEEPL_FORMALITY = {'formal': 'prefer_more', 'informal': 'prefer_less'}
+# Paires mesurées par un essai réel (evaluation/RESULTATS_2026-10-22.md) ; les autres restent proposées.
+EVALUATED_PAIRS = {('FR', 'EN-GB')}
 SEVERITIES = {'critical': 'critique', 'major': 'majeur', 'minor': 'mineur'}
 
 
@@ -62,11 +65,12 @@ def prepare_batch(uploads, provider):
 
 
 def translate_one(data, suffix, blocks, provider, source_language, language, api_key, model, glossary, brief,
-                  ambiguity_model=None, memory=None):
+                  ambiguity_model=None, memory=None, meaning_model=None):
     """Traduire un document puis construire son rapport et sa comparaison.
 
     Avec ``ambiguity_model``, un appel OpenAI séparé repère les ambiguïtés du
-    texte source ; son échec n'empêche jamais de livrer la traduction.
+    texte source ; avec ``meaning_model``, l'analyse du sens porte ensuite sur tout
+    le document. Leur échec n'empêche jamais de livrer la traduction.
     """
     passages = []  # Paires alignées (GPT uniquement) pour les contrôles passage par passage.
     tagged, reused = [], []  # Traductions balisées (corrections) et passages repris de la mémoire.
@@ -100,30 +104,45 @@ def translate_one(data, suffix, blocks, provider, source_language, language, api
         quality['ambiguity'] = {'model': ambiguity_model, 'found': len(doubts), 'error': ambiguity_error}
     if reused:
         quality['memory'] = {'reused_passages': reused}
-    return translated, quality, comparison, {'passages': passages, 'tagged': tagged}
+    quality['language_pair_evaluated'] = (source_language, language) in EVALUATED_PAIRS
+    aligned = {'passages': passages, 'tagged': tagged}
+    if meaning_model:
+        pairs = meaning_pairs(comparison['source'], comparison['translation'], passages) if comparison['available'] else None
+        try:
+            if pairs is None:
+                raise ValueError('Analyse du sens impossible : textes non extraits ou paragraphes non appariés. '
+                                 'Aucun appel effectué.')
+            aligned['semantic_review'] = review_document(pairs, source_language, language,
+                                                         os.getenv('OPENAI_API_KEY', '').strip(), model=meaning_model)
+        except Exception as exc:
+            log_failure('Analyse du sens automatique', exc)
+            aligned['semantic_error'] = error_message(exc)
+    return translated, quality, comparison, aligned
 
 
 def render_semantic_review(result, index, comparison, quality, model):
-    """Avis IA à la demande : consentement distinct, un seul appel par paire de textes."""
+    """Avis IA à la demande sur tout le document, par parties : consentement distinct, aucun appel répété."""
     st.markdown('**Analyse du sens par IA**')
     st.caption('Cherche les contresens, négations inversées, omissions et ajouts. Avis indicatif à confirmer par une personne bilingue ; les textes ne sont pas corrigés automatiquement.')
     review_key = os.getenv('OPENAI_API_KEY', '').strip()
     review_model = os.getenv('OPENAI_REVIEW_MODEL', '').strip() or model
     pair_id = fingerprint(comparison['source'], comparison['translation'])
-    oversized = max(len(comparison['source']), len(comparison['translation'])) > MAX_REVIEW_TEXT
-    if oversized:
-        st.info('Analyse du sens limitée à 12 000 caractères par texte. Le document complet dépasse cette limite et ne sera pas envoyé pour analyse.')
+    pairs = meaning_pairs(comparison['source'], comparison['translation'], result.get('passages'))
+    if pairs is None:
+        st.info('Analyse du sens impossible : document long dont les paragraphes ne peuvent pas être appariés '
+                'entre original et traduction. Rien ne sera envoyé.')
     if not review_key:
         st.caption('Une clé OpenAI est nécessaire à cette analyse, même si le document a été traduit par DeepL.')
-    st.caption(f'Moteur d’analyse : OpenAI · {review_model}. Un appel supplémentaire payant pour les deux textes complets. Le moteur peut être le même que celui de traduction.')
+    calls = len(list(chunks(pairs))) if pairs else 0
+    st.caption(f'Moteur d’analyse : OpenAI · {review_model}. Tout le document est analysé, en {calls} appel(s) '
+               'supplémentaire(s) payant(s). Le moteur peut être le même que celui de traduction.')
     review_consent = st.checkbox('J’autorise l’envoi de l’original et de la traduction à OpenAI pour cette analyse supplémentaire payante.', key=f'semantic_consent_{index}_{pair_id}')
     if st.button('Analyser le sens', key=f'semantic_run_{index}_{pair_id}',
-                 disabled=not review_key or not review_consent or oversized or 'semantic_review' in result):
+                 disabled=not review_key or not review_consent or pairs is None or 'semantic_review' in result):
         with st.spinner('Analyse du sens…'):
             try:
-                result['semantic_review'] = review_meaning(
-                    comparison['source'], comparison['translation'], quality['source_language'],
-                    quality['target_language'], review_key, model=review_model)
+                result['semantic_review'] = review_document(pairs, quality['source_language'],
+                                                            quality['target_language'], review_key, model=review_model)
                 result.pop('semantic_error', None)
             except Exception as exc:
                 log_failure('Analyse du sens', exc)
@@ -191,20 +210,31 @@ def render_comparison(result, index, model):
         st.caption(f"Aucune ambiguïté repérée dans l’original ({ambiguity['model']}). Cela ne valide pas le sens.")
 
 
+DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+
+
 def render_quality_details(result, index, quality):
-    """Données techniques du contrôle et rapport JSON téléchargeable."""
+    """Rapport lisible (Word) pour le relecteur ; données JSON gardées pour l'archivage."""
+    stem = result['name'].rsplit('.', 1)[0]
+    st.download_button('Télécharger le rapport qualité (Word)', type='primary', key=f'quality_docx_{index}',
+                       data=build_quality_report(result['name'], quality, result.get('passages'),
+                                                 result.get('semantic_review')),
+                       file_name=f'{stem}_rapport_qualite.docx', mime=DOCX)
+    st.caption('Synthèse, analyse du sens, alertes avec l’original et la traduction, limites et cadre de relecture '
+               'à signer. Lisible sans connaissance technique ; à ouvrir dans Word.')
     if quality['status'] == 'unavailable':
         st.warning(quality['limitations'])
     else:
-        if quality['issues']:
-            st.json(quality['issues'])
+        messages = readable_alerts(quality)
+        if messages:
+            st.dataframe([{'Alerte': message} for message in messages], hide_index=True)
         else:
             st.write('Aucun écart détecté par les contrôles activés. Le sens reste à vérifier.')
         if quality.get('glossary'):
             st.caption(f"Glossaire version {quality['glossary']['version']} · {quality['glossary']['status']} · "
                        + ('aide GPT et contrôle' if quality['glossary_usage'] == 'prompt_and_check' else 'contrôle uniquement'))
         st.caption(quality['limitations'])
-    st.download_button('Télécharger le rapport de contrôle', json.dumps(quality, ensure_ascii=False, indent=2),
+    st.download_button('Données techniques (JSON, archivage)', json.dumps(quality, ensure_ascii=False, indent=2),
                        result['name'] + '.quality.json', 'application/json', key=f'quality_{index}')
 
 
@@ -263,22 +293,26 @@ def render_result(result, index, model):
             with st.expander('Corriger la traduction'):
                 render_corrections(result, index)
         if result.get('quality'):
-            with st.expander('Détails et rapport de contrôle'):
+            with st.expander('Rapport qualité'):
                 render_quality_details(result, index, result['quality'])
 
 
 st.set_page_config(page_title='Traduction de documents', page_icon='📄', layout='centered')
 st.title('Documents & traduction')
-st.caption('Traduisez vos documents entre français, anglais, espagnol et allemand.')
+st.caption('Traduisez vos documents entre français, anglais, espagnol et allemand. '
+           'Priorité actuelle : **français → anglais**, la seule paire dont la qualité a été mesurée.')
 uploads = st.file_uploader('Importer des PDF ou Word', type=['pdf', 'docx'], accept_multiple_files=True, help='Maximum 5 documents de 5 Mo, dans la même langue source. Les PDF doivent contenir du texte.')
-selected = st.selectbox('Langue souhaitée', list(LANGUAGES))
+selected = st.selectbox('Langue souhaitée', list(LANGUAGES), key='target_language')
 language = LANGUAGES[selected]
-provider = st.selectbox('Moteur de traduction', [GPT, 'DeepL'])
-source_selected = st.selectbox('Langue du document', list(SOURCE_LANGUAGES))
+provider = st.selectbox('Moteur de traduction', [GPT, 'DeepL'], key='provider')
+source_selected = st.selectbox('Langue du document', list(SOURCE_LANGUAGES), key='source_language')
 source_language = SOURCE_LANGUAGES[source_selected]
 same_language = source_language == language.split('-')[0]
 if same_language:
     st.warning('Choisissez une langue souhaitée différente de la langue du document.')
+elif (source_language, language) not in EVALUATED_PAIRS:
+    st.info('Paire disponible mais **non évaluée** : la qualité n’a été mesurée qu’en français → anglais, et le '
+            'glossaire n’a pas été relu dans cette langue. Prévoyez une relecture complète par une personne bilingue.')
 key_name = 'OPENAI_API_KEY' if provider == GPT else 'DEEPL_API_KEY'
 api_key = os.getenv(key_name, '').strip()
 model = os.getenv('OPENAI_MODEL', '').strip() or 'gpt-4.1-mini'
@@ -309,6 +343,13 @@ except ValueError as exc:
 use_glossary = st.checkbox('Utiliser le glossaire technique', key='use_glossary', disabled=glossary is None,
                            value=glossary is not None and glossary['status'] == 'approved')
 active_glossary = glossary if use_glossary and glossary is not None else None
+review_model = os.getenv('OPENAI_REVIEW_MODEL', '').strip() or model
+check_meaning = st.checkbox(
+    f'Contrôler le sens après la traduction (j’accepte l’envoi de l’original et de la traduction à OpenAI, '
+    f'{review_model}, appels supplémentaires payants)', value=False, key='check_meaning',
+    disabled=not os.getenv('OPENAI_API_KEY', '').strip())
+st.caption('Une IA compare chaque partie du document à sa traduction : contresens, négations inversées, omissions, '
+           'ajouts. Avis à confirmer par une personne bilingue. Fonctionne aussi avec DeepL.')
 ambiguity_model = os.getenv('OPENAI_AMBIGUITY_MODEL', '').strip() or AMBIGUITY_MODEL
 openai_key = bool(os.getenv('OPENAI_API_KEY', '').strip())
 find_doubts = st.checkbox(
@@ -340,7 +381,7 @@ if glossary is not None:
         st.caption('GPT : aide à la traduction et contrôle des termes. DeepL : contrôle après traduction uniquement. '
                    'Une alerte indique un terme attendu absent ; une variante correcte peut être signalée. '
                    'La présence du terme ne garantit pas le sens de la phrase.')
-if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_key or not consent or same_language):
+if st.button('Traduire le lot', type='primary', key='translate', disabled=not uploads or not api_key or not consent or same_language):
     prepared, issues = prepare_batch(uploads, provider) if len(uploads) <= MAX_FILES else ([], ['Importez au maximum 5 fichiers.'])
     for issue in issues:
         st.error(issue)
@@ -353,7 +394,8 @@ if st.button('Traduire le lot', type='primary', disabled=not uploads or not api_
                     translated, quality, comparison, aligned = translate_one(
                         data, suffix, blocks, provider, source_language, language, api_key, model, active_glossary,
                         brief, ambiguity_model if find_doubts else None,
-                        memory if use_memory and provider == GPT else None)
+                        memory if use_memory and provider == GPT else None,
+                        review_model if check_meaning else None)
                     results.append({'name': output_name(name, language, index), 'data': translated, 'suffix': suffix,
                                     'error': None, 'quality': quality, 'comparison': comparison,
                                     'source': data, **aligned})

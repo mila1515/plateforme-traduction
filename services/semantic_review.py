@@ -17,6 +17,7 @@ from services.translation import SOURCE_NAMES, validate_language_pair
 log = logging.getLogger(__name__)
 
 MAX_REVIEW_TEXT = 12_000
+CHUNK_TEXT = 6_000  # Partie analysée par appel : assez courte pour une lecture attentive.
 PROMPT_VERSION = 'semantic-v1'
 CATEGORIES = ['negation', 'obligation', 'omission', 'addition', 'meaning', 'value_or_unit', 'responsibility']
 SCHEMA = {
@@ -138,3 +139,68 @@ def review_meaning(source, translation, source_language, target_language, api_ke
                    'created_at': datetime.now(timezone.utc).isoformat(),
                    'human_validation_required': True})
     return report
+
+
+def meaning_pairs(source_text, translation_text, passages=None):
+    """Unités à comparer : passages alignés (GPT), paragraphes de même nombre, ou texte entier.
+
+    Renvoie None si le document est trop long pour un seul appel et que ses
+    paragraphes ne peuvent pas être appariés : mieux vaut ne rien analyser
+    qu'une partie tronquée présentée comme complète.
+    """
+    if passages:
+        return [(source, translation) for source, translation in passages]
+    sources, translations = source_text.split('\n'), translation_text.split('\n')
+    if len(sources) == len(translations):
+        return list(zip(sources, translations, strict=True))
+    if max(len(source_text), len(translation_text)) <= MAX_REVIEW_TEXT:
+        return [(source_text, translation_text)]
+    return None
+
+
+def chunks(pairs, limit=CHUNK_TEXT):
+    """Regrouper des unités consécutives sans dépasser ``limit`` caractères par côté."""
+    group, size = [], 0
+    for source, translation in pairs:
+        length = max(len(source), len(translation))
+        if group and size + length > limit:
+            yield group
+            group, size = [], 0
+        group.append((source, translation))
+        size += length
+    if group:
+        yield group
+
+
+def review_document(pairs, source_language, target_language, api_key, model='gpt-4.1-mini', client=None):
+    """Analyser tout le document, partie par partie, puis regrouper les avis.
+
+    Un appel par partie d'environ 6 000 caractères. Une unité plus longue que
+    la limite d'un appel est refusée avant tout envoi. L'avis global est
+    « problèmes suspectés » dès qu'une partie en signale, « ne peut pas
+    conclure » si une partie ne conclut pas, sinon « aucun problème signalé ».
+    """
+    pairs = [(source, translation) for source, translation in pairs if source.strip() or translation.strip()]
+    if not pairs:
+        raise ValueError('Les deux textes doivent être disponibles pour analyser le sens.')
+    if any(max(len(source), len(translation)) > MAX_REVIEW_TEXT for source, translation in pairs):
+        raise ValueError('Analyse du sens : un passage dépasse 12 000 caractères. Aucun appel effectué.')
+    parts = [review_meaning('\n'.join(source for source, _ in group), '\n'.join(translation for _, translation in group),
+                            source_language, target_language, api_key, model=model, client=client)
+             for group in chunks(pairs)]
+    assessments = {part['assessment'] for part in parts}
+    assessment = ('suspected_issues' if 'suspected_issues' in assessments
+                  else 'inconclusive' if 'inconclusive' in assessments else 'no_issue_detected')
+    summaries = [part['summary'] for part in parts]
+    return {
+        'assessment': assessment,
+        'summary': summaries[0] if len(parts) == 1 else '\n'.join(
+            f'Partie {number}/{len(parts)} : {summary}' for number, summary in enumerate(summaries, 1)),
+        'issues': [dict(issue, part=number) for number, part in enumerate(parts, 1) for issue in part['issues']],
+        'discarded_issues': sum(part.get('discarded_issues', 0) for part in parts),
+        'parts': len(parts),
+        'provider': 'OpenAI', 'model': model, 'prompt_version': PROMPT_VERSION,
+        'source_language': source_language, 'target_language': target_language,
+        'created_at': datetime.now(timezone.utc).isoformat(),
+        'human_validation_required': True,
+    }

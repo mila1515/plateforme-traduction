@@ -75,11 +75,11 @@ def test_interface_sends_brief_and_tone_and_records_them(monkeypatch, provider):
     monkeypatch.setattr(services.translation, 'translate_document', translate)
     monkeypatch.setattr(services.openai_translation, 'translate_openai_document', translate)
     app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
-    app.selectbox[1].select(provider).run()
+    app.selectbox(key='provider').select(provider).run()
     app.checkbox[0].check().run()
     app.text_area(key='brief_description').input('Procédure de maintenance pour techniciens.').run()
     app.selectbox(key='brief_tone').select('Formel (vouvoiement)').run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception
     if provider == 'DeepL':
         assert calls[0]['formality'] == 'prefer_more'
