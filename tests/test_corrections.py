@@ -128,9 +128,9 @@ def test_interface_passes_memory_to_gpt_only_when_enabled(monkeypatch, tmp_path)
     app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
     assert app.checkbox(key='use_memory').label.startswith('Réutiliser la mémoire de traduction (1 passage')
     app.checkbox[0].check().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert calls[-1]['memory']['entries']
     assert app.session_state['results'][0]['quality']['memory'] == {'reused_passages': [1]}
     app.checkbox(key='use_memory').uncheck().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert calls[-1]['memory'] is None

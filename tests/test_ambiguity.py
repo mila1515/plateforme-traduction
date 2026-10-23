@@ -91,10 +91,10 @@ def test_interface_runs_the_optional_analysis_and_never_loses_the_translation(mo
     app = AppTest.from_file(str(ROOT / 'app.py'), default_timeout=10).run()
     app.checkbox[0].check().run()
     app.run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception and not calls  # Option désactivée par défaut : aucun appel.
     app.checkbox(key='find_ambiguities').check().run()
-    app.button[0].click().run()
+    app.button(key='translate').click().run()
     assert not app.exception and calls[0]['model'] == 'gpt-5.4'
     result = app.session_state['results'][0]
     assert result['data'] == sample  # La traduction est livrée même si l'analyse échoue.

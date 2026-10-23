@@ -73,14 +73,14 @@ def test_review_page_saves_decisions(monkeypatch, tmp_path):
     path = make_trial(tmp_path)
     monkeypatch.setenv('EVALUATION_RUNS_PATH', str(tmp_path))
     monkeypatch.setenv('EVALUATION_CORPUS_PATH', str(tmp_path / 'corpus.json'))
-    app = AppTest.from_file(str(ROOT / 'pages' / '1_Relecture_des_essais.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'relecture.py'), default_timeout=20).run()
     assert not app.exception
     assert any('négation' in warning.value for warning in app.warning)  # Alerte automatique affichée.
     app.text_input(key='reviewer').input('Réviseur bilingue').run()
     # Dans un formulaire, les saisies partent ensemble au clic sur « Enregistrer ».
     app.radio(key='decision_essai_C01').set_value('rejected')
     app.text_area(key='notes_essai_C01').input('Négation inversée.')
-    app.button[0].click().run()
+    app.button(key='save_review').click().run()
     assert not app.exception and not app.error
     assert json.loads(path.read_text(encoding='utf-8'))['results'][0]['human_decision'] == 'rejected'
     assert any('1 décision' in message.value for message in app.success)
@@ -88,7 +88,7 @@ def test_review_page_saves_decisions(monkeypatch, tmp_path):
 
 def test_review_page_explains_when_no_trial(monkeypatch, tmp_path):
     monkeypatch.setenv('EVALUATION_RUNS_PATH', str(tmp_path))
-    app = AppTest.from_file(str(ROOT / 'pages' / '1_Relecture_des_essais.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'relecture.py'), default_timeout=20).run()
     assert not app.exception and 'Aucun essai' in app.info[0].value
 
 
@@ -110,13 +110,13 @@ def test_glossary_page_requires_confirmation_then_approves(monkeypatch, tmp_path
     path = tmp_path / 'technical.json'
     shutil.copy(DEFAULT_PATH, path)
     monkeypatch.setenv('GLOSSARY_PATH', str(path))
-    app = AppTest.from_file(str(ROOT / 'pages' / '2_Validation_du_glossaire.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'glossaire.py'), default_timeout=20).run()
     assert not app.exception
     app.text_input[1].input('Responsable maintenance')
-    app.button[0].click().run()
+    app.button(key='approve_glossary').click().run()
     assert 'confirmation' in app.error[0].value and load_glossary(path)['status'] == 'proposed'
     app.text_input[1].input('Responsable maintenance')
     app.checkbox[0].check()
-    app.button[0].click().run()
+    app.button(key='approve_glossary').click().run()
     assert not app.exception and load_glossary(path)['reviewed_by'] == 'Responsable maintenance'
     assert 'validée par Responsable maintenance' in app.success[0].value

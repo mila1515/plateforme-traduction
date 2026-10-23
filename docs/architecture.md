@@ -14,7 +14,12 @@ dans la session de l'utilisateur ; les services ne dépendent pas de Streamlit.
 
 ```text
 platforme/
-├── app.py                         Interface, choix, progression, téléchargements
+├── app.py                         Point d'entrée : identité visuelle, logo, menu en haut de page
+├── app_pages/
+│   ├── traduction.py              Page « Traduire » : étapes, progression, résultats
+│   ├── relecture.py               Décisions humaines sur les essais réels
+│   └── glossaire.py               Lecture et validation métier du glossaire
+├── assets/                        Logos remplaçables (clair, sombre, pictogramme)
 ├── services/
 │   ├── files.py                   Validation des fichiers, noms de sortie, ZIP
 │   ├── translation.py             Langues, appel DeepL, messages d'erreur
@@ -30,10 +35,9 @@ platforme/
 │   ├── memory.py                  Mémoire de traduction locale (passages validés)
 │   ├── corrections.py             Corrections du relecteur, fichier reconstruit sans appel
 │   ├── trials.py                  Essais réels : relecture humaine et bilan
+│   ├── quality_report.py          Rapport qualité Word lisible par un relecteur
+│   ├── branding.py                Nom et logos de l'entreprise, réglables dans .env
 │   └── semantic_review.py         Avis OpenAI explicite sur le sens, sans approbation
-├── pages/
-│   ├── 1_Relecture_des_essais.py  Décisions humaines sur les essais réels
-│   └── 2_Validation_du_glossaire.py  Lecture et validation métier du glossaire
 ├── data/glossaries/
 │   └── technical.json             Vocabulaire multilingue versionné
 ├── tests/                         Tests unitaires et parcours Streamlit simulés

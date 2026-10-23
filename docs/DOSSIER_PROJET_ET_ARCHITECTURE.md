@@ -690,7 +690,7 @@ Les fournisseurs sont simulés : cette exécution n'envoie aucun document et ne 
 
 Le dossier antérieur mentionnait un essai réel français vers anglais avec OpenAI et une vérification visuelle du PDF. Cet essai n'a pas été reproduit pendant cette mise à jour. Avant une démonstration, vérifier le fournisseur choisi, le rendu du document et les conditions réseau. Les appels DeepL réels et l'ensemble des langues restent à vérifier sur un corpus représentatif.
 
-## 24. Présentation courte pour un entretien technique
+## 24. Présentation courte du projet
 
 « J'ai réalisé seule une plateforme de traduction de documents PDF et Word pour traiter plusieurs fichiers dans un même parcours. L'utilisateur importe les documents, choisit la langue source, la langue cible et le moteur GPT ou DeepL, puis récupère les résultats individuellement ou dans une archive ZIP.
 

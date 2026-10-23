@@ -31,9 +31,8 @@ def build_review(source_data, target_data, suffix, source_language, target_langu
         pairs = select_pairs(glossary, source_language, target_language, source_text) if glossary is not None else None
         report = check_translation(source_text, target_text, glossary_pairs=pairs)
         if passages:
-            # Les alertes localisées remplacent les comparaisons globales des nombres et références.
-            report['issues'] = ([issue for issue in report['issues'] if issue['category'] == 'terminology']
-                                + check_passages(passages, source_language, target_language))
+            # Les alertes localisées remplacent les comparaisons globales (nombres, références, termes).
+            report['issues'] = check_passages(passages, source_language, target_language, glossary_pairs=pairs)
             report['checks'] = report['checks'] + ['passages']
         if comparison is not None:
             comparison.update({'available': True, 'source': source_text, 'translation': target_text})
@@ -82,6 +81,9 @@ def _values(counts):
 
 def passage_detail(issue):
     """Message d'une alerte par passage, sans le rappel du passage."""
+    if issue['check'] == 'terminology':
+        return (f"terme attendu absent : {', '.join(issue['expected_terms'])} "
+                f"(original : {', '.join(issue['source_terms'])}).")
     if issue['check'] in ('numbers', 'references'):
         label = 'nombres' if issue['check'] == 'numbers' else 'références'
         parts = ([f"{label} absents : {_values(issue['missing'])}"] if issue['missing'] else []) \

@@ -12,8 +12,8 @@ from services.trials import CORPUS_PATH, RUNS_DIR, evaluate, list_trials, load_t
 
 LABELS = {'pending': 'En attente', 'accepted': 'Acceptée', 'rejected': 'Rejetée'}
 
-st.set_page_config(page_title='Relecture des essais', page_icon='📝', layout='wide')
-st.title('Relecture des essais')
+st.set_page_config(page_title='Relecture des essais', layout='wide')
+st.title('Relecture des essais', anchor=False)
 st.caption('Décidez pour chaque traduction si elle est acceptable. Les traductions enregistrées ne sont jamais '
            'modifiées ; seules vos décisions, notes et votre nom sont ajoutés au fichier d’essai.')
 
@@ -74,7 +74,7 @@ with st.form(f'review_{path.stem}'):
             notes = st.text_area('Notes de relecture', value=result.get('review_notes') or '', key=f'notes_{key}',
                                  height=68, placeholder='Obligatoire pour un rejet : quelle erreur, quelle gravité ?')
             decisions[result['id']] = {'human_decision': decision, 'review_notes': notes}
-    submitted = st.form_submit_button('Enregistrer les décisions', type='primary')
+    submitted = st.form_submit_button('Enregistrer les décisions', type='primary', key='save_review')
 if submitted:
     try:
         changed = save_review(path, decisions, reviewer)

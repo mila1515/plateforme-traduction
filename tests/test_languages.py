@@ -68,15 +68,30 @@ def test_ui_source_to_french_and_same_language_disabled(monkeypatch, provider):
         return sample
     monkeypatch.setattr(services.translation, 'translate_document', translate)
     monkeypatch.setattr(services.openai_translation, 'translate_openai_document', translate)
-    app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py')).run()
-    app.selectbox[1].select(provider).run()
+    app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'), default_timeout=10).run()
+    app.selectbox(key='provider').select(provider).run()
     app.checkbox[0].check().run()
-    app.selectbox[0].select('Français').run()
-    assert app.button[0].disabled
-    app.selectbox[2].select('Anglais').run()
-    assert not app.button[0].disabled
-    app.button[0].click().run()
+    app.selectbox(key='target_language').select('Français').run()
+    assert app.button(key='translate').disabled
+    app.selectbox(key='source_language').select('Anglais').run()
+    assert not app.button(key='translate').disabled
+    app.button(key='translate').click().run()
     assert not app.exception
     assert calls[0][0][2] == 'FR'
     assert calls[0][1]['source_language'] == 'EN'
     assert app.session_state['result_source'] == 'Anglais'
+
+
+@pytest.mark.parametrize('target,source,evaluated', [('Anglais britannique', 'Français', True),
+                                                      ('Allemand', 'Français', False),
+                                                      ('Espagnol', 'Français', False),
+                                                      ('Français', 'Anglais', False)])
+def test_interface_says_only_french_to_english_is_evaluated(target, source, evaluated):
+    from streamlit.testing.v1 import AppTest
+    app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / 'app.py'), default_timeout=10).run()
+    assert 'français → anglais' in app.caption[0].value
+    app.selectbox(key='target_language').select(target).run()
+    app.selectbox(key='source_language').select(source).run()
+    assert any('non évaluée' in info.value for info in app.info) is not evaluated
+    # Les autres langues restent disponibles.
+    assert set(app.selectbox(key='target_language').options) == {'Anglais britannique', 'Espagnol', 'Allemand', 'Français'}

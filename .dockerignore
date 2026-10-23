@@ -7,8 +7,10 @@
 !app.py
 !services/
 !services/*.py
-!pages/
-!pages/*.py
+!app_pages/
+!app_pages/*.py
+!assets/
+!assets/*.svg
 !data/
 !data/glossaries/
 !data/glossaries/*.json

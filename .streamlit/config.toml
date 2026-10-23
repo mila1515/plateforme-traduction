@@ -1,11 +1,58 @@
+# Identité visuelle : adapter les couleurs à la charte de l'entreprise ici (voir docs/branding.md).
+# Le nom et les logos se règlent dans .env (APP_NAME, APP_LOGO…).
+
 [server]
 maxUploadSize = 5
 
 [browser]
 gatherUsageStats = false
 
+[client]
+# Masque les menus de développement : seul l'essentiel reste visible pour les utilisateurs.
+toolbarMode = "minimal"
+
 [theme]
-primaryColor = "#176b79"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f5f7"
-textColor = "#173244"
+# Police servie par Streamlit lui-même : aucun appel à un service de polices externe.
+font = "sans-serif"
+baseRadius = "medium"
+buttonRadius = "medium"
+showWidgetBorder = true
+showSidebarBorder = true
+headingFontWeights = [700, 600, 600, 600, 600, 600]
+linkUnderline = false
+
+[theme.light]
+primaryColor = "#176B79"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F5F7"
+textColor = "#1B2733"
+linkColor = "#176B79"
+borderColor = "#D5DDE3"
+dataframeHeaderBackgroundColor = "#E8EEF1"
+greenColor = "#1A7F37"
+orangeColor = "#B26A00"
+redColor = "#C62828"
+blueColor = "#176B79"
+
+[theme.light.sidebar]
+backgroundColor = "#F7F9FA"
+secondaryBackgroundColor = "#EDF2F4"
+borderColor = "#D5DDE3"
+
+[theme.dark]
+primaryColor = "#1F7F8C"
+backgroundColor = "#0F1A20"
+secondaryBackgroundColor = "#18262E"
+textColor = "#E6EDF1"
+linkColor = "#5CC3D0"
+borderColor = "#2A3B45"
+dataframeHeaderBackgroundColor = "#1E2F38"
+greenColor = "#3FB950"
+orangeColor = "#D29922"
+redColor = "#F06A6A"
+blueColor = "#5CC3D0"
+
+[theme.dark.sidebar]
+backgroundColor = "#0B1418"
+secondaryBackgroundColor = "#15232A"
+borderColor = "#2A3B45"
