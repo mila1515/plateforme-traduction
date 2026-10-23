@@ -7,6 +7,11 @@ espagnol et allemand. Il propose un glossaire local
 optionnel et des rapports de contrôle. Tous les résultats sont des
 **brouillons à relire**. Il n'y a pas de base de données.
 
+**Priorité actuelle : français → anglais britannique.** C'est la seule paire dont
+la qualité a été mesurée par un essai réel ([résultats](evaluation/RESULTATS_2026-10-22.md)).
+L'espagnol et l'allemand restent disponibles, mais non évalués : l'application
+l'indique et le rapport de contrôle le note (`language_pair_evaluated`).
+
 | Pour comprendre ou modifier… | Lire ou ouvrir… |
 | --- | --- |
 | L'organisation du code et le parcours complet | [Architecture actuelle](docs/architecture.md) |
@@ -57,9 +62,11 @@ fichiers locaux, y compris le glossaire.
 Dans **Comparer les textes**, **Analyser le sens** permet maintenant de
 demander un avis IA sur les contresens, négations inversées, omissions et
 ajouts. L'option exige un consentement distinct et un appel OpenAI payant,
-même après traduction DeepL. Limite : 12 000 caractères par texte, sans
-troncature. L'avis et les citations restent à confirmer humainement ; il ne
-constitue pas une approbation. Voir [les étapes et limites](docs/semantic-review.md).
+même après traduction DeepL. Tout le document est analysé, par parties ; l'option
+**Contrôler le sens après la traduction** la lance automatiquement. L'avis et les
+citations restent à confirmer humainement ; il ne constitue pas une approbation.
+Le **rapport qualité Word** de chaque document reprend l'analyse et les alertes,
+avec l'original et la traduction côte à côte. Voir [les étapes et limites](docs/semantic-review.md).
 
 Chaque résultat propose **Comparer les textes** : original et traduction
 côte à côte dans un espace replié, avec des alertes en français. La comparaison
@@ -67,9 +74,10 @@ utilise le texte déjà extrait, sans nouvel appel IA, et ne reproduit pas la
 mise en page. Les textes restent en session ; le rapport JSON n'inclut pas
 les documents complets. Si l'extraction échoue, la comparaison est indisponible
 mais le téléchargement reste possible. Les données techniques et le rapport
-sont regroupés dans **Détails et rapport de contrôle**.
+sont regroupés dans **Rapport qualité**, avec un rapport Word lisible par un relecteur
+non informaticien (le JSON reste disponible pour l'archivage).
 
-**Trois choses distinctes :** les 224 tests utilisent de faux clients API
+**Trois choses distinctes :** les 245 tests utilisent de faux clients API
 (mocks) pour vérifier le fonctionnement ; les contrôles locaux signalent
 certains écarts sur les sorties ; la qualité linguistique réelle doit être
 mesurée par des essais fournisseurs et une relecture bilingue/métier.
@@ -91,7 +99,7 @@ reconstruit sans appel) et alimenter une **mémoire de traduction** locale : les
 passages validés sont ensuite réutilisés sans être renvoyés au moteur. Voir
 [Corrections et mémoire](docs/translation-memory.md).
 
-Deux pages du menu latéral servent à la validation humaine : **Relecture des
+Deux pages du groupe **Qualité** (menu en haut) servent à la validation humaine : **Relecture des
 essais** (une décision par traduction d'essai, bilan face aux alertes) et
 **Validation du glossaire** (lecture des notions, validation déclarée, glossaire
 ensuite utilisé par défaut).
@@ -130,7 +138,9 @@ Le [protocole d'évaluation](evaluation/README.md) propose un corpus fictif de
 30 passages, un formulaire d'essai et un rapport séparant alertes automatiques
 et décisions humaines. Un premier essai réel (GPT et DeepL) est résumé dans
 [les résultats du 22 octobre 2026](evaluation/RESULTATS_2026-10-22.md) ;
-la relecture humaine reste à faire.
+la relecture humaine reste à faire. Synthèse lisible en Word :
+[Bilan d'évaluation de la qualité](docs/Bilan_evaluation_qualite_FR-EN.docx), régénérable avec
+`python -B -m evaluation.bilan_qualite`.
 
 ## Objectif
 
@@ -191,7 +201,9 @@ flowchart LR
 
 ```text
 platforme/
-├── app.py                  # Interface et coordination du traitement
+├── app.py                  # Point d'entrée : identité visuelle et menu
+├── app_pages/              # Pages Traduire, Relecture des essais, Validation du glossaire
+├── assets/                 # Logos remplaçables par ceux de l'entreprise
 ├── services/
 │   ├── translation.py      # Appels DeepL, langues et messages d'erreur
 │   ├── openai_translation.py # Lots de texte, OpenAI et sortie PDF/Word
@@ -325,7 +337,15 @@ Tous les noms et événements sont fictifs. Ces documents pédagogiques ne const
 
 ### Lancer les tests
 
-Vérification du 22 octobre 2026 : **224 tests réussis avec Python local**, après
+Vérification du 23 octobre 2026 : **245 tests réussis avec Python local**, après
+la refonte visuelle (thème clair et sombre, logo, menu en haut, page en étapes).
+L'identité de l'entreprise s'adapte sans code : voir [Adapter l'identité](docs/branding.md).
+
+Vérification précédente : **238 tests réussis avec Python local**, après
+l'analyse du sens par parties (automatique en option), le rapport qualité Word et
+le contrôle des termes passage par passage.
+
+Vérification précédente : **224 tests réussis avec Python local**, après
 ajout des pages de relecture des essais et de validation du glossaire.
 
 Vérification précédente : **215 tests**, après

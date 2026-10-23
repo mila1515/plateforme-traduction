@@ -9,8 +9,8 @@ from services.glossary import DEFAULT_PATH, load_glossary, set_review_status
 
 LANGUAGES = {'FR': 'Français', 'EN': 'Anglais', 'ES': 'Espagnol', 'DE': 'Allemand'}
 
-st.set_page_config(page_title='Validation du glossaire', page_icon='📚', layout='wide')
-st.title('Validation du glossaire')
+st.set_page_config(page_title='Validation du glossaire', layout='wide')
+st.title('Validation du glossaire', anchor=False)
 
 path = Path(os.getenv('GLOSSARY_PATH', '').strip() or DEFAULT_PATH)
 try:

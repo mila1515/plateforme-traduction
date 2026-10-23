@@ -12,7 +12,8 @@ RUN python -m pip install --no-cache-dir -r requirements.lock \
 
 COPY --chown=appuser:appuser app.py ./
 COPY --chown=appuser:appuser services/ ./services/
-COPY --chown=appuser:appuser pages/ ./pages/
+COPY --chown=appuser:appuser app_pages/ ./app_pages/
+COPY --chown=appuser:appuser assets/ ./assets/
 COPY --chown=appuser:appuser data/glossaries/ ./data/glossaries/
 COPY --chown=appuser:appuser .streamlit/ ./.streamlit/
 

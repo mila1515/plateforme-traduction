@@ -25,7 +25,8 @@ services:
     volumes:
       - ./app.py:/app/app.py:ro
       - ./services:/app/services:ro
-      - ./pages:/app/pages:ro
+      - ./app_pages:/app/app_pages:ro
+      - ./assets:/app/assets:ro
       - ./tests:/app/tests:ro
       - ./examples:/app/examples:ro
       - ./evaluation:/app/evaluation:ro

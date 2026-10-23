@@ -33,7 +33,7 @@ l'application (`passage_alerts`), pour mesurer leurs vraies et fausses alertes.
 ## Relire un essai dans l'application
 
 Lancer l'application en local (`start.ps1`), puis ouvrir **Relecture des essais**
-dans le menu latéral. Chaque cas affiche l'original, la traduction et les alertes
+dans le menu Qualité, en haut de page. Chaque cas affiche l'original, la traduction et les alertes
 automatiques ; choisir En attente, Acceptée ou Rejetée et enregistrer. Seuls la
 décision, les notes, le nom du réviseur et la date sont ajoutés au fichier :
 la traduction enregistrée n'est jamais modifiée. Accepter exige le nom du

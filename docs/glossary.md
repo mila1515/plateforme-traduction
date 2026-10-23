@@ -41,7 +41,7 @@ et données distinctes décrit dans la
 
 ## Valider le glossaire dans l'application
 
-La page **Validation du glossaire** (menu latéral) affiche les notions dans les
+La page **Validation du glossaire** (menu Qualité, en haut de page) affiche les notions dans les
 quatre langues, avec recherche. Après vérification par une personne bilingue et
 compétente sur le métier, saisir son nom et la date, cocher la confirmation et
 valider : le statut passe à `approved` et le glossaire devient **utilisé par

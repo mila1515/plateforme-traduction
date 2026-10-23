@@ -73,7 +73,7 @@ def test_review_page_saves_decisions(monkeypatch, tmp_path):
     path = make_trial(tmp_path)
     monkeypatch.setenv('EVALUATION_RUNS_PATH', str(tmp_path))
     monkeypatch.setenv('EVALUATION_CORPUS_PATH', str(tmp_path / 'corpus.json'))
-    app = AppTest.from_file(str(ROOT / 'pages' / '1_Relecture_des_essais.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'relecture.py'), default_timeout=20).run()
     assert not app.exception
     assert any('négation' in warning.value for warning in app.warning)  # Alerte automatique affichée.
     app.text_input(key='reviewer').input('Réviseur bilingue').run()
@@ -88,7 +88,7 @@ def test_review_page_saves_decisions(monkeypatch, tmp_path):
 
 def test_review_page_explains_when_no_trial(monkeypatch, tmp_path):
     monkeypatch.setenv('EVALUATION_RUNS_PATH', str(tmp_path))
-    app = AppTest.from_file(str(ROOT / 'pages' / '1_Relecture_des_essais.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'relecture.py'), default_timeout=20).run()
     assert not app.exception and 'Aucun essai' in app.info[0].value
 
 
@@ -110,7 +110,7 @@ def test_glossary_page_requires_confirmation_then_approves(monkeypatch, tmp_path
     path = tmp_path / 'technical.json'
     shutil.copy(DEFAULT_PATH, path)
     monkeypatch.setenv('GLOSSARY_PATH', str(path))
-    app = AppTest.from_file(str(ROOT / 'pages' / '2_Validation_du_glossaire.py'), default_timeout=20).run()
+    app = AppTest.from_file(str(ROOT / 'app_pages' / 'glossaire.py'), default_timeout=20).run()
     assert not app.exception
     app.text_input[1].input('Responsable maintenance')
     app.button(key='approve_glossary').click().run()

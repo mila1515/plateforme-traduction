@@ -4,7 +4,7 @@
 
 | Vérification | Moyen utilisé aujourd'hui | Ce qu'elle prouve |
 | --- | --- | --- |
-| Fonctionnement du logiciel | 224 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, Word corrompus, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
+| Fonctionnement du logiciel | 245 tests automatisés avec clients fournisseurs simulés | Traitement des cas prévus : fichiers, Word corrompus, langues, contexte, erreurs, rapports, comparaison et avis IA structuré |
 | Alertes sur une traduction | Comparaisons locales des nombres, références et termes | Détection de certains écarts dans le texte extractible |
 | Qualité linguistique réelle | Corpus de 30 passages, essais réels et formulaire de relecture | Premier essai du 22 octobre 2026 (3 moteurs, pré-relecture IA) : voir [résultats](../evaluation/RESULTATS_2026-10-22.md) ; relecture humaine à faire |
 
@@ -15,8 +15,9 @@ protection des codes et contrôles par passage ; **181 tests** après l'essai
 réel (corpus de 30 cas) et les balises Word ; **198 tests** après la fiche de
 contexte, le repérage des ambiguïtés et le glossaire version 4 ; **215 tests**
 après les corrections et la mémoire de traduction ; **224 tests** après les pages
-de relecture et de validation du glossaire. Les anciennes
-mentions de 18, 52, 63, 82, 87, 90, 99, 104, 106, 110, 130, 133, 167, 181, 198 ou 215 tests sont des états historiques, pas le
+de relecture et de validation du glossaire ; **238 tests** après l'analyse du sens
+par parties et le rapport qualité Word ; **245 tests** après la refonte visuelle. Les anciennes
+mentions de 18, 52, 63, 82, 87, 90, 99, 104, 106, 110, 130, 133, 167, 181, 198, 215, 224 ou 238 tests sont des états historiques, pas le
 nombre actuel. Le retrait d'une langue a supprimé des cas paramétrés ; un
 nombre de tests plus élevé ne signifie pas automatiquement une meilleure qualité.
 
